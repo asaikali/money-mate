@@ -1,0 +1,115 @@
+volumes:
+  postgres:
+  pgadmin:
+
+services:
+  postgres:
+    container_name: odp_postgres
+    labels:
+      # see https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.docker-compose.custom-images
+      org.springframework.boot.service-connection: postgres
+    image: "postgres:17"
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+      PGDATA: "/data/postgres"
+    volumes:
+      - postgres:/data/postgres
+      - ./db/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+    ports:
+      - "${PG_PORT:-15432}:5432"
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: odp_pgadmin
+    labels:
+      org.springframework.boot.ignore: true
+    image: "dpage/pgadmin4:latest"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@example.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+      - ./db/docker_pgadmin_servers.json:/pgadmin4/servers.json
+    ports:
+      - "${PGADMIN_PORT:-15433}:80"
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "/bin/echo 'postgres:5432:*:postgres:password' > /tmp/pgpassfile && chmod 600 /tmp/pgpassfile && /entrypoint.sh"
+    restart: unless-stopped
+
+  redis:
+    container_name: odp_redis
+    image: "redis:7"
+    # Host uses 16379, so it won't clash with any local Redis on 6379
+    ports:
+      - "16379:6379"
+    restart: unless-stopped
+
+  obp-api:
+    container_name: odp_obp_api
+    image: "openbankproject/obp-api:latest"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      # --- core connector & host ---
+      OBP_CONNECTOR: "mapped"
+      # How OBP should advertise itself (used in links, OAuth redirects, etc.)
+      OBP_HOSTNAME: "http://localhost:8081"
+      OBP_DEV_PORT: "8080"
+      OBP_APIPATHZERO: "obp"
+
+      # --- database (Postgres in docker-compose network) ---
+      OBP_DB_DRIVER: "org.postgresql.Driver"
+      OBP_DB_URL: "jdbc:postgresql://postgres:5432/postgres?user=postgres&password=password"
+
+      # --- migrations ---
+      OBP_MIGRATION_SCRIPTS_EXECUTE_ALL: "true"
+      OBP_MIGRATION_SCRIPTS_ENABLED: "true"
+
+      # --- sandbox / dev friendliness ---
+      OBP_CONSUMERS_ENABLED_BY_DEFAULT: "true"
+      OBP_AUTHUSER_SKIPEMAILVALIDATION: "true"
+
+      # allow_sandbox_account_creation=true
+      OBP_ALLOW_SANDBOX_ACCOUNT_CREATION: "true"
+
+      # allow_sandbox_data_import=true
+      OBP_ALLOW_SANDBOX_DATA_IMPORT: "true"
+
+      # must match what you use in the import curl
+      OBP_SANDBOX_DATA_IMPORT_SECRET: "mysecret"
+
+      # payments + transaction requests
+      OBP_PAYMENTS_ENABLED: "true"
+      OBP_TRANSACTIONREQUESTS_ENABLED: "true"
+      OBP_TRANSACTIONREQUESTS_CONNECTOR: "mapped"
+      OBP_TRANSACTIONREQUESTS_SUPPORTED_TYPES: "SANDBOX_TAN,COUNTERPARTY,SEPA,ACCOUNT_OTP,ACCOUNT,SIMPLE,HOLD"
+
+      # Direct Login shortcuts (handy for scripts / tools)
+      OBP_ALLOW_DIRECT_LOGIN: "true"
+      OBP_DIRECT_LOGIN_CONSUMER_KEY_MANDATORY: "false"
+
+      # More verbose internal errors while you're exploring
+      OBP_DISPLAY_INTERNAL_ERRORS: "true"
+
+      # --- Redis cache: point OBP to the redis service, not host Redis ---
+      # cache.redis.url=redis
+      OBP_CACHE_REDIS_URL: "redis"
+      # cache.redis.port=6379
+      OBP_CACHE_REDIS_PORT: "6379"
+
+      # Bootstrap Super User (dev only)
+      OBP_SUPER_ADMIN_USERNAME: "admin@example.com"
+      OBP_SUPER_ADMIN_INITAL_PASSWORD: "admin123"      # typo version
+      OBP_SUPER_ADMIN_EMAIL: "admin@example.com"
+
+
+    ports:
+      # Expose API on host 8081 -> container 8080
+      - "8081:8080"
+    restart: unless-stopped
