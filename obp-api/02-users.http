@@ -1,0 +1,69 @@
+###############################################################################
+# OBP User Operations
+###############################################################################
+# Purpose: Create and manage users
+#
+# Prerequisites: Run 00-auth.http first to authenticate
+# Note: User creation typically does NOT require authentication (public endpoint)
+#
+# Environment: Select "dev" (local) or "public-sandbox" (remote) in your IDE
+###############################################################################
+
+### 👤 Create User - Alice
+# Create a new user (no authentication required)
+POST {{host}}/obp/{{api_version}}/users
+Content-Type: application/json
+
+{
+  "email": "alice@example.com",
+  "username": "alice",
+  "password": "SecurePass123!",
+  "first_name": "Alice",
+  "last_name": "Smith"
+}
+
+> {%
+  client.global.set("alice_user_id", response.body.user_id);
+  client.global.set("alice_username", response.body.username);
+  client.log("✅ Alice created with user_id: " + response.body.user_id);
+%}
+
+
+### 👤 Create User - Bob
+# Create another user
+POST {{host}}/obp/{{api_version}}/users
+Content-Type: application/json
+
+{
+  "email": "bob@example.com",
+  "username": "bob",
+  "password": "SecurePass123!",
+  "first_name": "Bob",
+  "last_name": "Jones"
+}
+
+> {%
+  client.global.set("bob_user_id", response.body.user_id);
+  client.global.set("bob_username", response.body.username);
+  client.log("✅ Bob created with user_id: " + response.body.user_id);
+%}
+
+
+### 👤 Create User - Custom
+# Template for creating additional users
+POST {{host}}/obp/{{api_version}}/users
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "username": "newuser",
+  "password": "SecurePass123!",
+  "first_name": "First",
+  "last_name": "Last"
+}
+
+
+### 📋 List Users (requires admin)
+# Note: This endpoint may not be available in all OBP versions
+GET {{host}}/obp/{{api_version}}/users
+Authorization: DirectLogin token={{token}}

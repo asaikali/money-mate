@@ -1,0 +1,118 @@
+###############################################################################
+# OBP Admin Operations
+###############################################################################
+# Purpose: Administrative operations (roles, entitlements, permissions)
+#
+# Prerequisites:
+#   - Run 00-auth.http first to authenticate
+#   - Requires admin/super-admin privileges
+#
+# Uses: {{token}}, {{admin_user_id}}
+#
+# Environment: Select "dev" (local) or "public-sandbox" (remote) in your IDE
+###############################################################################
+
+###
+### GRANT ROLES TO ADMIN USER
+###
+
+### 🔑 Grant CanCreateBank Role
+# Allows creating new banks
+# Required before using "Create Bank" in 01-banks.http
+POST {{host}}/obp/{{api_version}}/users/{{admin_user_id}}/entitlements
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "bank_id": "",
+  "role_name": "CanCreateBank"
+}
+
+
+### 🔑 Grant CanCreateAccount Role
+# Allows creating accounts for other users
+# Required before using "Create Account" in 03-accounts.http
+POST {{host}}/obp/{{api_version}}/users/{{admin_user_id}}/entitlements
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "bank_id": "",
+  "role_name": "CanCreateAccount"
+}
+
+
+### 🔑 Grant CanCreateSandbox Role
+# Allows importing sandbox data
+# Required for /sandbox/data-import endpoint
+POST {{host}}/obp/{{api_version}}/users/{{admin_user_id}}/entitlements
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "bank_id": "",
+  "role_name": "CanCreateSandbox"
+}
+
+
+### 🔑 Grant CanCreateUser Role
+# Allows creating new users
+POST {{host}}/obp/{{api_version}}/users/{{admin_user_id}}/entitlements
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "bank_id": "",
+  "role_name": "CanCreateUser"
+}
+
+
+###
+### GRANT ROLES TO OTHER USERS
+###
+
+### 🔑 Grant Role to Specific User
+# Grant a role to any user (replace user_id)
+@target_user_id = user-id-here
+
+POST {{host}}/obp/{{api_version}}/users/{{target_user_id}}/entitlements
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "bank_id": "",
+  "role_name": "RoleName"
+}
+
+
+###
+### QUERY ENTITLEMENTS
+###
+
+### 📋 Get All Entitlements for Admin User
+# See what roles the admin user has
+GET {{host}}/obp/{{api_version}}/users/{{admin_user_id}}/entitlements
+Authorization: DirectLogin token={{token}}
+
+
+### 📋 Get All Entitlements for Specific User
+GET {{host}}/obp/{{api_version}}/users/{{target_user_id}}/entitlements
+Authorization: DirectLogin token={{token}}
+
+
+### 📋 Get All Roles (System-wide)
+# Lists all available roles in the system
+GET {{host}}/obp/{{api_version}}/roles
+Authorization: DirectLogin token={{token}}
+
+
+###
+### DELETE ENTITLEMENTS
+###
+
+### ❌ Delete Entitlement
+# Remove a specific entitlement from a user
+@entitlement_id = entitlement-id-here
+
+DELETE {{host}}/obp/{{api_version}}/users/{{admin_user_id}}/entitlements/{{entitlement_id}}
+Authorization: DirectLogin token={{token}}

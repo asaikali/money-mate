@@ -32,5 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
-tmp/**
-.env
+# Secrets directory - contains credentials, API keys, etc.
+.secrets/
+
+# Spring Boot profile files with credentials (git-ignored)
+src/main/resources/application-local.yaml
+src/main/resources/application-public-sandbox.yaml
+

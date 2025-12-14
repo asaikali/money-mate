@@ -1,0 +1,121 @@
+###############################################################################
+# OBP Account Operations
+###############################################################################
+# Purpose: Discover, create, and manage accounts
+#
+# Prerequisites:
+#   - Run 00-auth.http first to authenticate
+#   - For creating accounts: Run 05-admin.http to grant CanCreateAccount role
+#
+# Uses: {{token}}, {{admin_user_id}}, {{bank_id}}, {{alice_user_id}}
+#
+# Environment: Select "dev" (local) or "public-sandbox" (remote) in your IDE
+###############################################################################
+
+###
+### DISCOVER ACCOUNTS
+###
+
+### 📋 List ALL My Accounts
+# Discover all accounts you have access to across ALL banks
+# This is your main "where are my accounts?" endpoint
+GET {{host}}/obp/{{api_version}}/my/accounts
+Authorization: DirectLogin token={{token}}
+
+> {%
+  // Auto-save first account's details for quick access
+  if (response.body && response.body.accounts && response.body.accounts.length > 0) {
+    client.global.set("account_bank_id", response.body.accounts[0].bank_id);
+    client.global.set("account_id", response.body.accounts[0].id);
+
+    // Find owner view
+    const views = response.body.accounts[0].views || [];
+    const ownerView = views.find(v => v.id === "owner");
+    client.global.set("view_id", ownerView ? "owner" : (views[0] ? views[0].id : "owner"));
+
+    client.log("✅ Found " + response.body.accounts.length + " account(s)");
+    client.log("   First account ID: " + response.body.accounts[0].id);
+    client.log("   Bank ID: " + response.body.accounts[0].bank_id);
+  } else {
+    client.log("ℹ️ No accounts found");
+  }
+%}
+
+
+### 🔍 List Account Views
+# Get available views for a specific account
+# Useful to see what permissions/views you have
+@account_bank_id = gh.29.fi
+@account_id = 49037b7f-2004-4526-8693-ac2db320cc37
+
+GET {{host}}/obp/{{api_version}}/banks/{{account_bank_id}}/accounts/{{account_id}}/views
+Authorization: DirectLogin token={{token}}
+
+
+### 📊 Get Account Details
+# Get full account details using a specific view
+# Typically use "owner" view for full access
+@view_id = owner
+
+GET {{host}}/obp/{{api_version}}/banks/{{account_bank_id}}/accounts/{{account_id}}/{{view_id}}/account
+Authorization: DirectLogin token={{token}}
+
+
+### 📊 Quick Access - First Account
+# Uses auto-saved variables from "List ALL My Accounts"
+# Run that request first, then use this
+GET {{host}}/obp/{{api_version}}/banks/{{account_bank_id}}/accounts/{{account_id}}/{{view_id}}/account
+Authorization: DirectLogin token={{token}}
+
+
+###
+### CREATE ACCOUNTS
+###
+
+### 💰 Create Account for Alice
+# Requires CanCreateAccount role (grant in 05-admin.http)
+# Uses bank_id from 01-banks.http and alice_user_id from 02-users.http
+POST {{host}}/obp/{{api_version}}/banks/{{bank_id}}/accounts
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "user_id": "{{alice_user_id}}",
+  "label": "Alice's Checking Account",
+  "product_code": "CHECKING",
+  "balance": {
+    "currency": "USD",
+    "amount": "0"
+  },
+  "branch_id": "main-branch",
+  "account_routings": []
+}
+
+> {%
+  client.global.set("alice_account_id", response.body.account_id);
+  client.log("✅ Account created for Alice with ID: " + response.body.account_id);
+%}
+
+
+### 💰 Create Account for Bob
+# Create another account for Bob
+POST {{host}}/obp/{{api_version}}/banks/{{bank_id}}/accounts
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "user_id": "{{bob_user_id}}",
+  "label": "Bob's Savings Account",
+  "product_code": "SAVINGS",
+  "balance": {
+    "currency": "USD",
+    "amount": "1000.00"
+  },
+  "branch_id": "main-branch",
+  "account_routings": []
+}
+
+> {%
+  client.global.set("bob_account_id", response.body.account_id);
+  client.log("✅ Account created for Bob with ID: " + response.body.account_id);
+%}

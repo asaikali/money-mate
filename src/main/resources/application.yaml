@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: money-mate
+  # Default profile (used when no profile specified in IntelliJ)
+  profiles:
+    default: public-sandbox
+
+# OBP API Configuration - Common settings
+obp:
+  api:
+    timeout:
+      connect: 10s
+      read: 30s
+
+# Profile-specific settings (base-url, version, auth) are in:
+#   - application-local.yaml (local dev)
+#   - application-public-sandbox.yaml (public sandbox)

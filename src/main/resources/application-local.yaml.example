@@ -1,0 +1,11 @@
+# Template for application-local.yaml
+# Copy this to application-local.yaml and fill in your credentials
+
+obp:
+  api:
+    base-url: http://localhost:8081
+    version: v5.0.0
+  auth:
+    username: your-username@example.com
+    password: your-password
+    consumer-key: your-consumer-key

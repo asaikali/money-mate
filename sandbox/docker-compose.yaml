@@ -63,6 +63,10 @@ services:
       OBP_DEV_PORT: "8080"
       OBP_APIPATHZERO: "obp"
 
+      # --- API versions ---
+      # Explicitly enable v5.0.0, v5.1.0, and v6.0.0
+      OBP_API_ENABLED_VERSIONS: "OBPv5.0.0,OBPv5.1.0,OBPv6.0.0"
+
       # --- database (Postgres in docker-compose network) ---
       OBP_DB_DRIVER: "org.postgresql.Driver"
       OBP_DB_URL: "jdbc:postgresql://postgres:5432/postgres?user=postgres&password=password"

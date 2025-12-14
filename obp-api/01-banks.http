@@ -1,0 +1,57 @@
+###############################################################################
+# OBP Bank Operations
+###############################################################################
+# Purpose: Create, list, and manage banks
+#
+# Prerequisites: Run 00-auth.http first to authenticate
+# Uses: {{token}}, {{admin_user_id}} (set by 00-auth.http)
+#
+# Environment: Select "dev" (local) or "public-sandbox" (remote) in your IDE
+###############################################################################
+
+### 📋 List All Banks
+# Get all banks in the system (public data)
+GET {{host}}/obp/{{api_version}}/banks
+Authorization: DirectLogin token={{token}}
+
+
+### 🏦 Create a New Bank
+# Requires CanCreateBank role (granted in 05-admin.http)
+POST {{host}}/obp/{{api_version}}/banks
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "id": "my-bank-1",
+  "bank_code": "MB1",
+  "full_name": "My First Bank",
+  "logo": "https://example.com/logo.png",
+  "website": "https://example.com"
+}
+
+> {%
+  client.global.set("bank_id", response.body.id);
+  client.log("✅ Bank created with ID: " + response.body.id);
+%}
+
+
+### 🔍 Get Bank Details
+# Get details for a specific bank
+# Uses bank_id from previous request or set manually
+GET {{host}}/obp/{{api_version}}/banks/{{bank_id}}
+Authorization: DirectLogin token={{token}}
+
+
+### 🏦 Create Another Bank (Example)
+# Example of creating a second bank
+POST {{host}}/obp/{{api_version}}/banks
+Authorization: DirectLogin token={{token}}
+Content-Type: application/json
+
+{
+  "id": "test-bank-2",
+  "bank_code": "TB2",
+  "full_name": "Test Bank Two",
+  "logo": "https://example.com/logo2.png",
+  "website": "https://testbank.example.com"
+}

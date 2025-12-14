@@ -31,9 +31,16 @@ Key properties:
 
 ## **Running OBP with Docker Compose**
 
-Use the included `docker-compose.yaml`:
+Use the included `docker-compose.yaml` from the `sandbox/` directory:
 
 ```shell
+docker compose -f sandbox/docker-compose.yaml up -d
+```
+
+Or run from the sandbox directory:
+
+```shell
+cd sandbox
 docker compose up -d
 ```
 
@@ -95,9 +102,10 @@ application registration). This is a one-time manual step.
    OBP_CONSUMER_SECRET=<paste-your-consumer-secret>
    ```
 
-7. **Test your consumer** using the requests in `obp.http`:
-    - Open `obp.http` in your IDE
-    - Run the "1️⃣ DirectLogin - Get Token" request
+7. **Test your consumer** using the requests in `obp-api/`:
+    - Open `obp-api/00-auth.http` in your IDE
+    - Select the `local` environment from the dropdown
+    - Run the "DirectLogin - Get Token" request
     - You should receive a JWT token in the response
 
 ### Example Consumer Registration Response

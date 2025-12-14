@@ -1,0 +1,44 @@
+###############################################################################
+# OBP Transaction Operations
+###############################################################################
+# Purpose: Query and explore transactions
+#
+# Prerequisites:
+#   - Run 00-auth.http first to authenticate
+#   - Run 03-accounts.http to discover accounts and set variables
+#
+# Uses: {{token}}, {{account_bank_id}}, {{account_id}}, {{view_id}}
+#
+# Environment: Select "dev" (local) or "public-sandbox" (remote) in your IDE
+###############################################################################
+
+### 📋 Get Account Transactions
+# Get all transactions for a specific account
+# Requires account identifiers from 03-accounts.http
+GET {{host}}/obp/{{api_version}}/banks/{{account_bank_id}}/accounts/{{account_id}}/{{view_id}}/transactions
+Authorization: DirectLogin token={{token}}
+
+
+### 📋 Get Transactions (with manual IDs)
+# Use this if you want to specify account details manually
+@manual_bank_id = gh.29.fi
+@manual_account_id = 49037b7f-2004-4526-8693-ac2db320cc37
+@manual_view_id = owner
+
+GET {{host}}/obp/{{api_version}}/banks/{{manual_bank_id}}/accounts/{{manual_account_id}}/{{manual_view_id}}/transactions
+Authorization: DirectLogin token={{token}}
+
+
+### 🔍 Get Single Transaction
+# Get details for a specific transaction
+# Replace transaction_id with actual transaction ID from previous response
+@transaction_id = transaction-id-here
+
+GET {{host}}/obp/{{api_version}}/banks/{{account_bank_id}}/accounts/{{account_id}}/{{view_id}}/transactions/{{transaction_id}}/transaction
+Authorization: DirectLogin token={{token}}
+
+
+### 📊 Get Transaction Metadata
+# Get metadata for a specific transaction
+GET {{host}}/obp/{{api_version}}/banks/{{account_bank_id}}/accounts/{{account_id}}/{{view_id}}/transactions/{{transaction_id}}/metadata
+Authorization: DirectLogin token={{token}}
