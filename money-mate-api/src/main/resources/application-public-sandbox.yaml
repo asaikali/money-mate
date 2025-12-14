@@ -1,0 +1,11 @@
+# OBP public sandbox credentials
+# This file is git-ignored - safe to store credentials here
+
+obp:
+  api:
+    base-url: https://apisandbox.openbankproject.com
+    version: v5.1.0
+  auth:
+    username: katja.fi.29@example.com
+    password: ca0317
+    consumer-key: fxkjmwyvdvavauhk2pauycrtxjofjh5ksayqk150

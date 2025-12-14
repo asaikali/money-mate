@@ -1,0 +1,11 @@
+# Local OBP development instance credentials
+# This file is git-ignored - safe to store credentials here
+
+obp:
+  api:
+    base-url: http://localhost:8081
+    version: v5.0.0
+  auth:
+    username: admin@example.com
+    password: admin123
+    consumer-key: ittdglwljoxrlto2cgkum2qe41dffincbuhu5njw

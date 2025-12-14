@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: money-mate-agent
+
+# MCP server configuration will be added in later phases
