@@ -1,60 +1,134 @@
-# Money Mate API - Implementation Plan
+# Money Mate - Implementation Plan
 
-## Phase 1: Agent Protocol Foundation (Pure Handshake)
+## Phase 1: Implement Spring AI MCP Agent
 
-**Goal**: Establish the control plane for agent interaction - verify agents can connect, read instructions, and refuse to hallucinate URLs
+**Goal**: Create an MCP (Model Context Protocol) server using Spring AI that exposes a stateless, streamable HTTP interface with one tool for answering money-related questions
 
-**URL Structure**:
-- `/` - Root endpoint (public, returns HAL response with handshake)
-- `/AGENTS.md` - Agent instructions (follows agents.md convention)
+**Architecture**:
+- MCP server running on localhost (port 9090)
+- Stateless HTTP transport for MCP protocol
+- No security/authentication (Phase 1 only - will add later)
+- Single tool: "money-talk" - conversational interface for discussing your finances, balances, transactions, and spending habits
+- Connect via Goose MCP client for testing
 
-**Root Response (`GET /`)**:
+**Tool Schema**:
+
+Input:
 ```json
 {
-  "agent_bootstrap": "Before taking any action, you MUST fetch and obey the resource referenced by _links.profile. Do not navigate or act until it has been read.",
-  "_links": {
-    "self": {
-      "href": "http://localhost:8080/"
-    },
-    "profile": {
-      "href": "http://localhost:8080/AGENTS.md",
-      "type": "text/markdown",
-      "title": "Agent Instructions - MUST READ"
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "Your question or message about your finances"
+    }
+  },
+  "required": ["message"]
+}
+```
+
+Output:
+```json
+{
+  "type": "object",
+  "properties": {
+    "response": {
+      "type": "string",
+      "description": "Conversational answer to your money question"
     }
   }
 }
 ```
 
-**Agent Instructions** (`/AGENTS.md`):
-Markdown document following agents.md convention with API-specific guidance:
-- "This API follows HAL and HAL-FORMS hypermedia standards"
-- "You MUST navigate exclusively by following relations exposed in _links"
-- "You MUST NOT construct or infer URLs"
-- "You MUST perform state-changing operations only via operations described in _templates"
-- "If a required link or template is absent, the operation is not allowed"
-- Current state: Unauthenticated (see root response for available operations)
+**Dependencies**:
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+</dependency>
+```
+
+**Configuration** (`application.properties` or `application.yml`):
+```yaml
+server:
+  port: 9090
+
+spring:
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE           # Required for streamable HTTP
+        name: money-mate-agent
+        version: 1.0.0
+        type: SYNC                     # Synchronous server
+        streamable-http:
+          mcp-endpoint: /mcp           # Endpoint path (default)
+        annotation-scanner:
+          enabled: true                # Auto-detect @McpTool methods
+```
+
+**Tool Implementation**:
+```java
+package com.example.moneymate.agent.tools;
+
+import org.springaicommunity.mcp.annotation.McpTool;
+import org.springaicommunity.mcp.annotation.McpToolParam;
+import org.springframework.stereotype.Component;
+
+@Component
+public class MoneyTools {
+
+    @McpTool(
+        name = "money-talk",
+        description = "Conversational interface for discussing your finances, balances, transactions, and spending habits"
+    )
+    public String moneyTalk(
+        @McpToolParam(
+            description = "Your question or message about your finances",
+            required = true
+        ) String message
+    ) {
+        // Phase 1: Hardcoded response
+        return "Your current balance is $1,234.56. You spent $45.67 on coffee this month.";
+    }
+}
+```
 
 **Tasks**:
-1. Create HATEOAS response model (RepresentationModel class)
-2. Create ApiRootController with `/` endpoint
-3. Create AgentInstructionsController for `/AGENTS.md` endpoint (serves markdown)
-4. Configure Spring HATEOAS for HAL+JSON content type
-5. Test with curl and validate HAL structure
+1. Add `spring-ai-starter-mcp-server-webmvc` dependency to `money-mate-agent/pom.xml`
+2. Create `application.yml` with server port 9090 and MCP streamable HTTP configuration
+3. Create `MoneyTools` class with `@McpTool` annotated `moneyTalk` method returning hardcoded response
+4. Verify Spring Boot auto-configuration detects and registers the tool
+5. Test server startup and MCP endpoint availability at `http://localhost:9090/mcp`
+6. Connect with Goose MCP client using streamable HTTP transport
+7. Verify Goose can discover the "money-talk" tool
+8. Verify Goose can invoke the tool and receive the hardcoded response
 
 **Testing**:
-- Manual curl testing
-- Verify agent can self-bootstrap from `/`
-- Verify `/AGENTS.md` is discoverable via profile link and readable
-- Test refusal behavior: request an operation with no corresponding link (e.g., "list orders") - agent should refuse or fail gracefully, NOT hallucinate a URL
+- Verify Spring Boot application starts successfully on port 9090
+- Verify MCP endpoint is accessible at `http://localhost:9090/mcp`
+- Verify annotation scanner auto-detects the `@McpTool` method
+- Configure Goose MCP client to connect via streamable HTTP to `http://localhost:9090/mcp`
+- Verify Goose discovers the "money-talk" tool in the tool list
+- Invoke "money-talk" tool from Goose with a test message
+- Verify hardcoded response is returned correctly
+- Verify stateless operation (no session state maintained between requests)
 
 **Acceptance Criteria**:
-- Unit test verifies root response structure
-- Unit test checks `_links` contains `self` and `profile` with correct hrefs
-- Unit test validates `profile` link points to `/AGENTS.md` with `type: "text/markdown"`
-- Unit test verifies `agent_bootstrap` field is present with explicit imperative instruction
-- Unit test confirms `/AGENTS.md` endpoint returns markdown content with agent instructions
-- Integration test: verify agent reads `/AGENTS.md` before attempting any navigation
-- Integration test: verify agent refuses to construct URLs when no links are present
+- MCP server exposes HTTP transport endpoint on port 9090 at `/mcp`
+- Goose client can successfully connect via streamable HTTP
+- Goose client can discover the "money-talk" tool
+- Goose client can invoke the tool and receive hardcoded response
+- Once working with Goose, we'll determine next steps
+
+**Implementation Notes**:
+- Spring AI MCP uses annotation-based tool registration via `@McpTool`
+- Automatic JSON schema generation for tool parameters from `@McpToolParam`
+- `spring.ai.mcp.server.protocol=STREAMABLE` is required for streamable HTTP transport
+- Server type should be `SYNC` for synchronous operations (simpler than ASYNC)
+- Annotation scanner is enabled by default - automatically discovers `@Component` classes with `@McpTool` methods
+- MCP endpoint defaults to `/mcp` and can be customized via `spring.ai.mcp.server.streamable-http.mcp-endpoint`
+- No manual tool callback registration needed - Spring Boot auto-configuration handles everything
 
 ---
 

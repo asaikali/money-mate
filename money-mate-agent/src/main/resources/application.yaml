@@ -1,5 +1,18 @@
 spring:
   application:
     name: money-mate-agent
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        name: money-mate-agent
+        version: 1.0.0
+        type: SYNC
+        streamable-http:
+          mcp-endpoint: /mcp
+        annotation-scanner:
+          enabled: true
 
-# MCP server configuration will be added in later phases
+server:
+  port: 9090
+

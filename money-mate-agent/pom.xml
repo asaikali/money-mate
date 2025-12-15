@@ -25,7 +25,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Spring AI MCP dependencies will be added in later phases -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
