@@ -119,6 +119,14 @@ public class ApiRootController {
                 .withTitle("Agent Instructions - MUST READ")
         );
 
+        // Always include about link
+        response.add(
+            Link.of("/docs/api")
+                .withRel(LinkRelation.of("about"))
+                .withType("text/markdown")
+                .withTitle("Money Mate API Overview")
+        );
+
         // Add authenticated-only links
         if (isAuthenticated) {
             response.add(Link.of("/users/me", "me")
@@ -133,5 +141,53 @@ public class ApiRootController {
     @GetMapping(value = "/AGENTS.md", produces = MediaType.TEXT_MARKDOWN_VALUE)
     public String agentsMd() {
         return AGENTS_MD;
+    }
+
+    private static final String API_OVERVIEW = """
+     # Money Mate API
+     ## Purpose
+    
+     Money Mate is a personal finance aggregation API. It provides a unified view of
+     bank accounts, balances, and related banking data.
+    
+     ## Core Resources
+    
+     - **User** \s
+       Represents the authenticated user and acts as the entry point to
+       user-specific data. Discover via the `me` link relation once authenticated.
+    
+     - **Accounts** \s
+       Bank accounts associated with the authenticated user. Discover via an
+       `accounts` link relation.
+    
+     - **Banks** \s
+       Financial institutions where the user holds accounts. Discover via a `banks`
+       link relation.
+    
+     - **Transactions** (planned) \s
+       Transaction history associated with accounts. When available, discover via
+       link relations exposed from account resources.
+    
+     ## Authentication
+    
+     Access to user-specific resources requires an authenticated session.
+    
+     - Establish a session only via the login operation exposed in `_templates` at
+       the API root.
+     - Successful authentication returns a session token.
+     - Present the session token on subsequent requests as directed by the session
+       resource.
+     - Terminate the session only via the logout operation exposed in `_templates`
+       on the session resource.
+    
+     ## Authority
+    
+     Rules governing navigation, actions, and agent behavior are defined by the
+     `profile` resource linked from the API root.
+     """;
+
+    @GetMapping(value = "/docs/api", produces = MediaType.TEXT_MARKDOWN_VALUE)
+    public String apiOverview() {
+        return API_OVERVIEW;
     }
 }
