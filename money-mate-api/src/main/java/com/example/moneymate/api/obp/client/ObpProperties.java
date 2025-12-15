@@ -1,4 +1,4 @@
-package com.example.moneymate.api.properties;
+package com.example.moneymate.api.obp.client;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

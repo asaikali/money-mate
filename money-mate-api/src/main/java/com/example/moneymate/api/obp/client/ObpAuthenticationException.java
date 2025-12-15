@@ -1,4 +1,4 @@
-package com.example.moneymate.api.obp.exception;
+package com.example.moneymate.api.obp.client;
 
 import org.springframework.http.HttpStatusCode;
 

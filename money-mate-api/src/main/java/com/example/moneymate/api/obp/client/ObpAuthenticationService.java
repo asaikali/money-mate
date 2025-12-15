@@ -1,7 +1,6 @@
 package com.example.moneymate.api.obp.client;
 
-import com.example.moneymate.api.obp.dto.auth.DirectLoginResponse;
-import com.example.moneymate.api.properties.ObpProperties;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;

@@ -1,4 +1,4 @@
-package com.example.moneymate.api.obp.dto.user;
+package com.example.moneymate.api.obp.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

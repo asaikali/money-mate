@@ -1,214 +1,161 @@
-# Money Mate - Multi-Module Refactoring Plan
+# Money Mate API - Implementation Plan
 
-## Phase 1: Multi-Module Project Structure Refactoring ✅ COMPLETED
+## Phase 1: Agent Protocol Foundation (Pure Handshake)
 
-### Goal
-Transform the current single-module Spring Boot application into a multi-module Maven project with:
-- Parent POM at root
-- `money-mate-api` module (Spring Boot HATEOAS backend)
-- `money-mate-agent` module (Spring AI MCP server)
+**Goal**: Establish the control plane for agent interaction - verify agents can connect, read instructions, and refuse to hallucinate URLs
 
-**Status**: ✅ All tasks completed successfully. Multi-module structure is in place and building.
+**URL Structure**:
+- `/` - Root endpoint (public, returns HAL response with handshake)
+- `/AGENTS.md` - Agent instructions (follows agents.md convention)
 
-### Current Structure
-```
-money-mate/
-├── pom.xml                                    # Single module POM
-├── src/
-│   ├── main/java/com/example/moneymate/
-│   │   ├── MoneyMateApplication.java
-│   │   ├── ObpTestRunner.java
-│   │   ├── config/
-│   │   │   └── ObpClientConfig.java
-│   │   ├── properties/
-│   │   │   └── ObpProperties.java
-│   │   └── obp/
-│   │       ├── client/
-│   │       │   ├── ObpAuthenticationService.java
-│   │       │   └── ObpUserService.java
-│   │       ├── dto/
-│   │       │   ├── auth/DirectLoginResponse.java
-│   │       │   └── user/UserDetailsResponse.java
-│   │       ├── exception/
-│   │       │   ├── ObpAuthenticationException.java
-│   │       │   └── ObpClientException.java
-│   │       └── interceptor/
-│   │           └── DirectLoginInterceptor.java
-│   ├── main/resources/
-│   │   ├── application.yaml
-│   │   ├── application-local.yaml
-│   │   └── application-public-sandbox.yaml
-│   └── test/java/com/example/moneymate/
-│       └── MoneyMateApplicationTests.java
-├── obp-api/                                   # HTTP request collection
-├── sandbox/                                   # Docker compose for local OBP
-└── README.md
+**Root Response (`GET /`)**:
+```json
+{
+  "agent_bootstrap": "Before taking any action, you MUST fetch and obey the resource referenced by _links.profile. Do not navigate or act until it has been read.",
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/"
+    },
+    "profile": {
+      "href": "http://localhost:8080/AGENTS.md",
+      "type": "text/markdown",
+      "title": "Agent Instructions - MUST READ"
+    }
+  }
+}
 ```
 
-### Target Structure
-```
-money-mate/                                    # Root (parent project)
-├── pom.xml                                    # Parent POM (packaging: pom)
-├── plan.md                                    # This file
-├── README.md                                  # Updated root README
-│
-├── money-mate-api/                            # Module 1: HATEOAS API
-│   ├── pom.xml                                # API module POM
-│   ├── README.md                              # API-specific README
-│   ├── src/
-│   │   ├── main/java/com/example/moneymate/api/
-│   │   │   ├── MoneyMateApiApplication.java   # New main class
-│   │   │   ├── obp/                           # Moved from root
-│   │   │   │   ├── client/
-│   │   │   │   ├── dto/
-│   │   │   │   ├── exception/
-│   │   │   │   └── interceptor/
-│   │   │   ├── config/                        # Moved from root
-│   │   │   └── properties/                    # Moved from root
-│   │   ├── main/resources/
-│   │   │   ├── application.yaml               # Moved from root
-│   │   │   ├── application-local.yaml
-│   │   │   └── application-public-sandbox.yaml
-│   │   └── test/java/com/example/moneymate/api/
-│   │       └── MoneyMateApiApplicationTests.java
-│   ├── obp-api/                               # Moved from root
-│   └── sandbox/                               # Moved from root
-│
-└── money-mate-agent/                          # Module 2: MCP Server
-    ├── pom.xml                                # Agent module POM
-    ├── README.md                              # Agent-specific README
-    └── src/
-        ├── main/java/com/example/moneymate/agent/
-        │   └── MoneyMateAgentApplication.java # New main class (placeholder)
-        ├── main/resources/
-        │   └── application.yaml               # Agent-specific config
-        └── test/java/com/example/moneymate/agent/
-            └── MoneyMateAgentApplicationTests.java
-```
+**Agent Instructions** (`/AGENTS.md`):
+Markdown document following agents.md convention with API-specific guidance:
+- "This API follows HAL and HAL-FORMS hypermedia standards"
+- "You MUST navigate exclusively by following relations exposed in _links"
+- "You MUST NOT construct or infer URLs"
+- "You MUST perform state-changing operations only via operations described in _templates"
+- "If a required link or template is absent, the operation is not allowed"
+- Current state: Unauthenticated (see root response for available operations)
 
-### Step-by-Step Refactoring Tasks
+**Tasks**:
+1. Create HATEOAS response model (RepresentationModel class)
+2. Create ApiRootController with `/` endpoint
+3. Create AgentInstructionsController for `/AGENTS.md` endpoint (serves markdown)
+4. Configure Spring HATEOAS for HAL+JSON content type
+5. Test with curl and validate HAL structure
 
-#### Step 1: Create Parent POM
-- Create new `pom.xml` at root with `<packaging>pom</packaging>`
-- Define common properties (Java 25, Spring Boot 3.5.8)
-- Declare modules: `money-mate-api`, `money-mate-agent`
-- Define dependency management for shared dependencies
+**Testing**:
+- Manual curl testing
+- Verify agent can self-bootstrap from `/`
+- Verify `/AGENTS.md` is discoverable via profile link and readable
+- Test refusal behavior: request an operation with no corresponding link (e.g., "list orders") - agent should refuse or fail gracefully, NOT hallucinate a URL
 
-#### Step 2: Create money-mate-api Module
-- Create `money-mate-api/` directory
-- Create `money-mate-api/pom.xml` with parent reference
-- Move `src/` directory to `money-mate-api/src/`
-- Update package structure: `com.example.moneymate` → `com.example.moneymate.api`
-- Rename `MoneyMateApplication.java` → `MoneyMateApiApplication.java`
-- Update all package declarations and imports
-- Move configuration files to `money-mate-api/src/main/resources/`
-- Move test files and update package names
-- Move `obp-api/` directory to `money-mate-api/obp-api/`
-- Move `sandbox/` directory to `money-mate-api/sandbox/`
-- Create `money-mate-api/README.md`
-
-#### Step 3: Create money-mate-agent Module Skeleton
-- Create `money-mate-agent/` directory
-- Create `money-mate-agent/pom.xml` with parent reference
-- Create `money-mate-agent/src/main/java/com/example/moneymate/agent/` structure
-- Create placeholder `MoneyMateAgentApplication.java`
-- Create `money-mate-agent/src/main/resources/application.yaml`
-- Create placeholder test class
-- Create `money-mate-agent/README.md`
-
-#### Step 4: Update Build Configuration
-- Remove old single-module `pom.xml` (replaced by parent POM)
-- Verify Maven wrapper still works
-- Update `.gitignore` if needed for module-specific targets
-
-#### Step 5: Verification
-- Run `./mvnw clean install` from root to build all modules
-- Run `./mvnw spring-boot:run` from `money-mate-api/` to verify API starts
-- Verify OBP authentication still works (ObpTestRunner)
-- Run tests in both modules
-
-### Expected Outcomes
-- ✅ Multi-module Maven structure in place
-- ✅ money-mate-api module builds and runs successfully
-- ✅ All existing OBP integration code works unchanged
-- ✅ money-mate-agent skeleton ready for implementation
-- ✅ Clean separation between API and agent concerns
-- ✅ Shared dependencies managed in parent POM
-
-### Notes
-- This phase is purely structural reorganization
-- No functional changes to existing code (except package names)
-- ObpTestRunner stays in money-mate-api for now (may remove later)
-- Agent module is placeholder only - implementation in later phases
+**Acceptance Criteria**:
+- Unit test verifies root response structure
+- Unit test checks `_links` contains `self` and `profile` with correct hrefs
+- Unit test validates `profile` link points to `/AGENTS.md` with `type: "text/markdown"`
+- Unit test verifies `agent_bootstrap` field is present with explicit imperative instruction
+- Unit test confirms `/AGENTS.md` endpoint returns markdown content with agent instructions
+- Integration test: verify agent reads `/AGENTS.md` before attempting any navigation
+- Integration test: verify agent refuses to construct URLs when no links are present
 
 ---
 
-## Phase 1 Completion Summary
+## Phase 2: Add Spring Security
 
-### ✅ Completed Tasks
-1. Created parent POM with multi-module structure
-2. Created money-mate-api module with complete source migration
-3. Updated all packages from `com.example.moneymate` to `com.example.moneymate.api`
-4. Renamed main application class to `MoneyMateApiApplication`
-5. Moved obp-api/ and sandbox/ directories to money-mate-api
-6. Created money-mate-agent skeleton module
-7. All modules build successfully with `mvnw clean package`
+**Goal**: Protect API with Spring Security, session-based authentication
 
-### Final Project Structure
-```
-money-mate/                                    # Root (parent project)
-├── pom.xml                                    # Parent POM
-├── plan.md                                    # This plan
-├── README.md                                  # Root README
-├── mvnw / mvnw.cmd                            # Maven wrapper
-│
-├── money-mate-api/                            # Module 1: HATEOAS API
-│   ├── pom.xml
-│   ├── README.md
-│   ├── src/
-│   │   ├── main/java/com/example/moneymate/api/
-│   │   │   ├── MoneyMateApiApplication.java
-│   │   │   ├── ObpTestRunner.java
-│   │   │   ├── config/ObpClientConfig.java
-│   │   │   ├── properties/ObpProperties.java
-│   │   │   └── obp/                           # OBP client integration
-│   │   │       ├── client/
-│   │   │       ├── dto/
-│   │   │       ├── exception/
-│   │   │       └── interceptor/
-│   │   ├── main/resources/
-│   │   │   ├── application.yaml
-│   │   │   ├── application-local.yaml
-│   │   │   └── application-public-sandbox.yaml
-│   │   └── test/java/com/example/moneymate/api/
-│   ├── obp-api/                               # HTTP request collection
-│   └── sandbox/                               # Docker compose
-│
-└── money-mate-agent/                          # Module 2: MCP Server
-    ├── pom.xml
-    ├── README.md
-    └── src/
-        ├── main/java/com/example/moneymate/agent/
-        │   └── MoneyMateAgentApplication.java
-        ├── main/resources/
-        │   └── application.yaml
-        └── test/java/com/example/moneymate/agent/
-            └── MoneyMateAgentApplicationTests.java
+**URL Structure** (additions):
+- `/login` - Login endpoint (accepts username/password)
+
+**Root Response** (`GET /`) - Authenticated variant adds:
+```json
+{
+  "_links": {
+    "login": { "href": "/login" }
+  },
+  "_templates": {
+    "default": {
+      "title": "Login to Money Mate API",
+      "method": "POST",
+      "target": "/login",
+      "properties": [
+        { "name": "username", "required": true },
+        { "name": "password", "required": true, "type": "password" }
+      ]
+    }
+  },
+  "authenticated": false
+}
 ```
 
-### Build Verification
-```bash
-$ ./mvnw clean package
+**Tasks**:
+1. Add spring-boot-starter-security dependency
+2. Configure SecurityFilterChain
+3. Make `/`, `/AGENTS.md` public (no authentication required)
+4. Implement `/login` endpoint
+5. Store authentication in HTTP session
+6. Update root response to reflect authenticated state
+7. Test authentication flow with curl
 
-[INFO] Reactor Summary for money-mate 0.0.1-SNAPSHOT:
-[INFO]
-[INFO] money-mate ......................................... SUCCESS
-[INFO] money-mate-api ..................................... SUCCESS
-[INFO] money-mate-agent ................................... SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
+**Testing**:
+- Verify unauthenticated access to root and AGENTS.md
+- Verify login endpoint accepts credentials
+- Verify session persistence
+- Verify authenticated root response shows authenticated: true
+
+---
+
+## Phase 3: Add Protected User Resource
+
+**Goal**: Create authenticated user endpoint with OBP integration
+
+**URL Structure** (additions):
+- `/user` - Current user profile (protected, requires authentication)
+
+**Root Response** (`GET /`) - Authenticated variant adds:
+```json
+{
+  "_links": {
+    "user": {
+      "href": "/user",
+      "title": "Current User Profile"
+    },
+    "logout": { "href": "/logout" }
+  },
+  "user": {
+    "name": "John Doe",
+    "userId": "user-123"
+  }
+}
 ```
 
-### Next Steps
-Ready for Phase 2 planning (domain modeling and implementation details to be defined).
+**User Resource** (`GET /user`):
+```json
+{
+  "_links": {
+    "self": { "href": "/user" },
+    "profile": {
+      "href": "/AGENTS.md",
+      "type": "text/markdown"
+    }
+  },
+  "userId": "user-123",
+  "email": "john.doe@example.com",
+  "username": "jdoe",
+  "provider": "obp",
+  "providerId": "user.provider.id"
+}
+```
+
+**Tasks**:
+1. Create UserController for `/user` endpoint
+2. Protect `/user` with Spring Security
+3. Integrate with ObpUserService to fetch user details
+4. Add user link to authenticated root response
+5. Update `/AGENTS.md` to include authenticated operation guidance
+6. Implement logout endpoint
+7. Test protected resource access
+
+**Testing**:
+- Verify unauthenticated requests to `/user` are rejected
+- Verify authenticated requests return user details from OBP
+- Verify logout clears session
+- Verify `/AGENTS.md` content includes guidance for authenticated operations

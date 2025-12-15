@@ -1,6 +1,5 @@
-package com.example.moneymate.api.obp.interceptor;
+package com.example.moneymate.api.obp.client;
 
-import com.example.moneymate.api.obp.client.ObpAuthenticationService;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;

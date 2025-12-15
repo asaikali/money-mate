@@ -1,8 +1,5 @@
-package com.example.moneymate.api.config;
+package com.example.moneymate.api.obp.client;
 
-import com.example.moneymate.api.obp.client.ObpAuthenticationService;
-import com.example.moneymate.api.obp.interceptor.DirectLoginInterceptor;
-import com.example.moneymate.api.properties.ObpProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

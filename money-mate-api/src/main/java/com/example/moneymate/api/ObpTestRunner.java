@@ -2,7 +2,7 @@ package com.example.moneymate.api;
 
 import com.example.moneymate.api.obp.client.ObpAuthenticationService;
 import com.example.moneymate.api.obp.client.ObpUserService;
-import com.example.moneymate.api.obp.dto.user.UserDetailsResponse;
+import com.example.moneymate.api.obp.client.UserDetailsResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
