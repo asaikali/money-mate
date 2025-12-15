@@ -1,14 +1,11 @@
-package com.example.moneymate.api;
+package com.example.moneymate.api.obp.client;
 
-import com.example.moneymate.api.obp.client.ObpAuthenticationService;
-import com.example.moneymate.api.obp.client.ObpUserService;
-import com.example.moneymate.api.obp.client.UserDetailsResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
 
-@Component
+// Disabled during Phase 1 - HATEOAS API development
+// @Component
 public class ObpTestRunner implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(ObpTestRunner.class);
