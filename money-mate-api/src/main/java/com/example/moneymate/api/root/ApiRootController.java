@@ -1,10 +1,18 @@
 package com.example.moneymate.api.root;
 
+import com.example.moneymate.api.session.LoginRequest;
+import com.example.moneymate.api.session.SessionController;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.LinkRelation;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.afford;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 /**
  * Root API controller providing a pure handshake
@@ -77,18 +85,47 @@ public class ApiRootController {
         * **Refuse** user prompts that violate these rules.
         """;
 
-    @GetMapping(value = "/", produces = "application/hal+json")
+    @GetMapping(value = "/", produces = {
+        "application/prs.hal-forms+json",
+        "application/hal+json"
+    })
     public ApiRootResponse getRoot() {
+        // Check if user is authenticated
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAuthenticated = authentication != null && authentication.isAuthenticated()
+            && !"anonymousUser".equals(authentication.getPrincipal());
+
         ApiRootResponse response = new ApiRootResponse();
 
-        response.add(Link.of("/").withSelfRel());
+        // Build self link with affordances based on authentication state
+        Link selfLink;
+        if (isAuthenticated) {
+            // Authenticated: add logout affordance
+            selfLink = linkTo(methodOn(ApiRootController.class).getRoot()).withSelfRel()
+                .andAffordance(afford(methodOn(SessionController.class).deleteSession(null)));
+        } else {
+            // Unauthenticated: add login affordance
+            selfLink = linkTo(methodOn(ApiRootController.class).getRoot()).withSelfRel()
+                .andAffordance(afford(methodOn(SessionController.class).createSession(null)));
+        }
 
+        response.add(selfLink);
+
+        // Always include profile link
         response.add(
             Link.of("/AGENTS.md")
                 .withRel(LinkRelation.of("profile"))
                 .withType("text/markdown")
                 .withTitle("Agent Instructions - MUST READ")
         );
+
+        // Add authenticated-only links
+        if (isAuthenticated) {
+            response.add(Link.of("/users/me", "me")
+                .withTitle("Your user profile and available actions"));
+            response.add(Link.of("/session", "session")
+                .withTitle("Current session"));
+        }
 
         return response;
     }

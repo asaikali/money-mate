@@ -1,0 +1,118 @@
+### Money Mate HATEOAS API - Test File
+### This file tests the complete session lifecycle with HAL-FORMS support
+
+### IMPORTANT: Token Extraction
+### - IntelliJ/WebStorm: Automatic extraction using response handler script (lines 39-41)
+### - VS Code REST Client: Use line 44 syntax instead of lines 39-41
+### - Other HTTP clients: Manually copy access_token from step 3 and uncomment line 49
+###
+### HOW TO USE:
+### 1. Run step 3 (POST /session) to login and get a token
+### 2. The token will be automatically saved to {{sessionToken}} variable
+### 3. All subsequent requests will use this token in Authorization headers
+
+@baseUrl = http://localhost:8080
+@username = test@example.com
+@password = password
+
+### 1. Get API Root (Unauthenticated)
+### Should return authenticated: false with login template
+GET {{baseUrl}}/
+
+
+### 2. Get AGENTS.md
+GET {{baseUrl}}/AGENTS.md
+Accept: text/markdown
+
+### 3. Create Session (Login)
+### Should return 201 Created with Bearer token and logout template
+# @name login
+POST {{baseUrl}}/session
+Content-Type: application/json
+Accept: application/prs.hal-forms+json
+
+{
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+> {%
+    client.global.set("sessionToken", response.body.access_token);
+%}
+
+### 4. Extract session token from login response (VS Code REST Client syntax - may not work in IntelliJ)
+# @sessionToken = {{login.response.body.access_token}}
+
+### MANUAL TOKEN (uncomment and paste your actual token here if automatic extraction doesn't work):
+### After running step 3, copy the access_token from the response and paste it below
+### Comment out lines 39-41 above if you use this manual option
+# @sessionToken = MMAT-YOUR-TOKEN-HERE
+
+### 5. Get Session Documentation
+GET {{baseUrl}}/docs/session
+Accept: text/markdown
+
+### 6. Get Session Status (with Bearer token)
+### ⚠️ PROTECTED ENDPOINT - Requires Authorization header with Bearer token
+### Should return session metadata with logout template
+### If you get 401, make sure the token from step 3 is correctly set
+GET {{baseUrl}}/session
+Authorization: Bearer {{sessionToken}}
+
+### 7. Get Current User (with Bearer token)
+### ⚠️ PROTECTED ENDPOINT - Requires Authorization header with Bearer token
+### Should return stubbed user profile
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{sessionToken}}
+Accept: application/hal+json
+
+### 8. Get API Root (Authenticated)
+### Should return authenticated: true with logout template and me/session links
+GET {{baseUrl}}/
+Authorization: Bearer {{sessionToken}}
+Accept: application/prs.hal-forms+json
+
+### 9. Logout (Delete Session)
+### Should return 204 No Content and invalidate token
+DELETE {{baseUrl}}/session
+Authorization: Bearer {{sessionToken}}
+
+### 10. Try to access protected resource after logout
+### Should return 401 Unauthorized
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{sessionToken}}
+Accept: application/hal+json
+
+### 11. Test invalid token
+### Should return 401 Unauthorized
+GET {{baseUrl}}/users/me
+Authorization: Bearer INVALID-TOKEN-12345
+Accept: application/hal+json
+
+### 12. Test missing authorization on protected endpoint
+### Should return 401 Unauthorized
+GET {{baseUrl}}/session
+Accept: application/hal+json
+
+###############################################
+### Alternative: Create new session for testing
+###############################################
+
+### Create another session
+# @name login2
+POST {{baseUrl}}/session
+Content-Type: application/json
+Accept: application/prs.hal-forms+json
+
+{
+  "username": "alice@example.com",
+  "password": "secret"
+}
+
+### Use the new session token
+@sessionToken2 = {{login2.response.body.access_token}}
+
+### Get user profile with new token
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{sessionToken2}}
+Accept: application/hal+json
