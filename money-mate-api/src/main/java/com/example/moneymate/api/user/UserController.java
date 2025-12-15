@@ -40,18 +40,33 @@ public class UserController {
             // Fetch real user data from OBP
             UserDetailsResponse obpUser = obpClient.getCurrentUser(principal.obpToken());
 
+            // Fetch accounts to calculate counts
+            var accounts = obpClient.getAccounts(principal.obpToken());
+            int accountCount = accounts.accounts().size();
+
+            // Count unique banks
+            long bankCount = accounts.accounts().stream()
+                .map(account -> account.bankId())
+                .distinct()
+                .count();
+
             // Map OBP response to our UserResponse
             UserResponse response = new UserResponse(
-                obpUser.userId(),
                 obpUser.username(),
-                obpUser.provider()
+                obpUser.email(),
+                accountCount,
+                (int) bankCount
             );
 
             Link selfLink = linkTo(methodOn(UserController.class).getCurrentUser()).withSelfRel();
             Link rootLink = Link.of("/", "root");
+            Link accountsLink = Link.of("/accounts", "accounts").withTitle("All my accounts");
+            Link banksLink = Link.of("/banks", "banks").withTitle("Banks I bank with");
 
             response.add(selfLink);
             response.add(rootLink);
+            response.add(accountsLink);
+            response.add(banksLink);
 
             return ResponseEntity.ok(response);
 

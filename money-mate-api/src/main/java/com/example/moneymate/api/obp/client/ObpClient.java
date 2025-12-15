@@ -97,4 +97,108 @@ public class ObpClient {
             throw new ObpClientException("Failed to fetch user details from OBP", e);
         }
     }
+
+    /**
+     * Get user's accounts from OBP using DirectLogin token.
+     *
+     * @param obpToken OBP DirectLogin token
+     * @return Accounts from OBP
+     * @throws ObpClientException if OBP is unreachable or returns error
+     */
+    public ObpAccountsResponse getAccounts(String obpToken) {
+        String directLoginHeader = "token=" + obpToken;
+        String uri = "/obp/" + apiVersion + "/my/accounts";
+
+        log.debug("Fetching accounts from OBP");
+
+        try {
+            ObpAccountsResponse response = publicRestClient.get()
+                .uri(uri)
+                .header("directlogin", directLoginHeader)
+                .retrieve()
+                .body(ObpAccountsResponse.class);
+
+            if (response == null) {
+                log.error("OBP my/accounts returned null response");
+                throw new ObpClientException("Failed to fetch accounts from OBP");
+            }
+
+            log.debug("Successfully fetched {} accounts", response.accounts().size());
+            return response;
+
+        } catch (RestClientException e) {
+            log.error("Failed to fetch accounts from OBP: {}", e.getMessage(), e);
+            throw new ObpClientException("Failed to fetch accounts from OBP", e);
+        }
+    }
+
+    /**
+     * Get all banks from OBP using DirectLogin token.
+     *
+     * @param obpToken OBP DirectLogin token
+     * @return Banks from OBP
+     * @throws ObpClientException if OBP is unreachable or returns error
+     */
+    public ObpBanksResponse getBanks(String obpToken) {
+        String directLoginHeader = "token=" + obpToken;
+        String uri = "/obp/" + apiVersion + "/banks";
+
+        log.debug("Fetching banks from OBP");
+
+        try {
+            ObpBanksResponse response = publicRestClient.get()
+                .uri(uri)
+                .header("directlogin", directLoginHeader)
+                .retrieve()
+                .body(ObpBanksResponse.class);
+
+            if (response == null) {
+                log.error("OBP banks returned null response");
+                throw new ObpClientException("Failed to fetch banks from OBP");
+            }
+
+            log.debug("Successfully fetched {} banks", response.banks().size());
+            return response;
+
+        } catch (RestClientException e) {
+            log.error("Failed to fetch banks from OBP: {}", e.getMessage(), e);
+            throw new ObpClientException("Failed to fetch banks from OBP", e);
+        }
+    }
+
+    /**
+     * Get account details including balance from OBP using DirectLogin token.
+     *
+     * @param obpToken OBP DirectLogin token
+     * @param bankId Bank ID
+     * @param accountId Account ID
+     * @return Account details from OBP
+     * @throws ObpClientException if OBP is unreachable or returns error
+     */
+    public ObpAccountDetailsResponse getAccountDetails(String obpToken, String bankId, String accountId) {
+        String directLoginHeader = "token=" + obpToken;
+        String uri = "/obp/" + apiVersion + "/banks/" + bankId + "/accounts/" + accountId + "/owner/account";
+
+        log.debug("Fetching account details for {}/{}", bankId, accountId);
+
+        try {
+            ObpAccountDetailsResponse response = publicRestClient.get()
+                .uri(uri)
+                .header("directlogin", directLoginHeader)
+                .retrieve()
+                .body(ObpAccountDetailsResponse.class);
+
+            if (response == null) {
+                log.error("OBP account details returned null response for {}/{}", bankId, accountId);
+                throw new ObpClientException("Failed to fetch account details from OBP");
+            }
+
+            log.debug("Successfully fetched account details for {}/{}", bankId, accountId);
+            return response;
+
+        } catch (RestClientException e) {
+            log.error("Failed to fetch account details from OBP for {}/{}: {}", bankId, accountId, e.getMessage(), e);
+            throw new ObpClientException("Failed to fetch account details from OBP", e);
+        }
+    }
 }

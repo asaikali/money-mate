@@ -4,25 +4,31 @@ import org.springframework.hateoas.RepresentationModel;
 
 public class UserResponse extends RepresentationModel<UserResponse> {
 
-    private final String id;
     private final String username;
-    private final String provider;
+    private final String email;
+    private final int accountCount;
+    private final int bankCount;
 
-    public UserResponse(String id, String username, String provider) {
-        this.id = id;
+    public UserResponse(String username, String email, int accountCount, int bankCount) {
         this.username = username;
-        this.provider = provider;
-    }
-
-    public String getId() {
-        return id;
+        this.email = email;
+        this.accountCount = accountCount;
+        this.bankCount = bankCount;
     }
 
     public String getUsername() {
         return username;
     }
 
-    public String getProvider() {
-        return provider;
+    public String getEmail() {
+        return email;
+    }
+
+    public int getAccountCount() {
+        return accountCount;
+    }
+
+    public int getBankCount() {
+        return bankCount;
     }
 }
