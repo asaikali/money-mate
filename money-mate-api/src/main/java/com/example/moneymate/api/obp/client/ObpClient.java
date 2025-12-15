@@ -201,4 +201,41 @@ public class ObpClient {
             throw new ObpClientException("Failed to fetch account details from OBP", e);
         }
     }
+
+    /**
+     * Get account transactions from OBP using DirectLogin token.
+     *
+     * @param obpToken OBP DirectLogin token
+     * @param bankId Bank ID
+     * @param accountId Account ID
+     * @return Transactions from OBP
+     * @throws ObpClientException if OBP is unreachable or returns error
+     */
+    public ObpTransactionsResponse getTransactions(String obpToken, String bankId, String accountId) {
+        String directLoginHeader = "token=" + obpToken;
+        String uri = "/obp/" + apiVersion + "/banks/" + bankId + "/accounts/" + accountId + "/owner/transactions";
+
+        log.debug("Fetching transactions for {}/{}", bankId, accountId);
+
+        try {
+            ObpTransactionsResponse response = publicRestClient.get()
+                .uri(uri)
+                .header("directlogin", directLoginHeader)
+                .retrieve()
+                .body(ObpTransactionsResponse.class);
+
+            if (response == null) {
+                log.error("OBP transactions returned null response for {}/{}", bankId, accountId);
+                throw new ObpClientException("Failed to fetch transactions from OBP");
+            }
+
+            log.debug("Successfully fetched {} transactions for {}/{}",
+                response.transactions().size(), bankId, accountId);
+            return response;
+
+        } catch (RestClientException e) {
+            log.error("Failed to fetch transactions from OBP for {}/{}: {}", bankId, accountId, e.getMessage(), e);
+            throw new ObpClientException("Failed to fetch transactions from OBP", e);
+        }
+    }
 }
