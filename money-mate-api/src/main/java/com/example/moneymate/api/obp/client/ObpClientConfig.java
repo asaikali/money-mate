@@ -22,22 +22,4 @@ public class ObpClientConfig {
             .requestFactory(requestFactory)
             .build();
     }
-
-    @Bean("obpAuthenticatedRestClient")
-    public RestClient obpAuthenticatedRestClient(
-        RestClient.Builder builder,
-        ObpAuthenticationService authService,
-        ObpProperties properties
-    ) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(properties.api().timeout().connect());
-        requestFactory.setReadTimeout(properties.api().timeout().read());
-
-        return builder
-            .baseUrl(properties.api().baseUrl())
-            .defaultHeader("Content-Type", "application/json")
-            .requestFactory(requestFactory)
-            .requestInterceptor(new DirectLoginInterceptor(authService))
-            .build();
-    }
 }

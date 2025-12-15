@@ -19,7 +19,8 @@ public interface SessionTokenStore {
     /**
      * Create a new session and return the generated token
      * @param username the username for the session
+     * @param obpToken the OBP DirectLogin token
      * @return the generated MMAT token
      */
-    String create(String username);
+    String create(String username, String obpToken);
 }

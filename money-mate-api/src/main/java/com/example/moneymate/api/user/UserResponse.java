@@ -8,14 +8,10 @@ public class UserResponse extends RepresentationModel<UserResponse> {
     private final String username;
     private final String provider;
 
-    private UserResponse(String id, String username, String provider) {
+    public UserResponse(String id, String username, String provider) {
         this.id = id;
         this.username = username;
         this.provider = provider;
-    }
-
-    public static UserResponse stubbed(String username) {
-        return new UserResponse("me", username, "stubbed");
     }
 
     public String getId() {

@@ -25,8 +25,6 @@ public record ObpProperties(
     ) {}
 
     public record AuthProperties(
-        String username,
-        String password,
         String consumerKey
     ) {}
 }

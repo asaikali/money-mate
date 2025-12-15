@@ -12,8 +12,8 @@
 ### 3. All subsequent requests will use this token in Authorization headers
 
 @baseUrl = http://localhost:8080
-@username = test@example.com
-@password = password
+@username = katja.fi.29@example.com
+@password = ca0317
 
 ### 1. Get API Root (Unauthenticated)
 ### Should return authenticated: false with login template

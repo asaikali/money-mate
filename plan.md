@@ -630,6 +630,71 @@ Error Response (401 Unauthorized) - Missing or invalid token:
 
 **Goal**: Replace stubbed authentication with real OBP DirectLogin integration. Connect to OBP for login and user profile operations.
 
+**Existing OBP Client Code** (from earlier experiment):
+
+The `api.obp.client` package already exists with OBP integration code, but needs simplification:
+
+✅ **Keep (already good)**:
+- `ObpProperties` - Config structure (simplify to remove auth.username/password)
+- `DirectLoginResponse` - DTO for OBP login response
+- `UserDetailsResponse` - DTO for OBP user details
+- `ObpClientException` & `ObpAuthenticationException` - Error handling
+- `ObpClientConfig.obpPublicRestClient` bean - RestClient for unauthenticated calls
+
+❌ **Delete (wrong pattern for multi-user API)**:
+- `ObpAuthenticationService` - Authenticates with hardcoded credentials, caches single token
+- `DirectLoginInterceptor` - Built for service account, not per-user tokens
+- `ObpUserService` - Uses interceptor pattern, need explicit token passing
+- `ObpClientConfig.obpAuthenticatedRestClient` bean - Uses wrong interceptor pattern
+- `ObpTestRunner` - Optional test code (already disabled)
+
+**Refactoring Plan**:
+
+Replace the multiple service classes with a single `ObpClient`:
+
+```java
+@Service
+public class ObpClient {
+
+    private final RestClient publicRestClient;
+    private final String consumerKey;
+
+    public ObpClient(@Qualifier("obpPublicRestClient") RestClient publicRestClient,
+                     ObpProperties properties) {
+        this.publicRestClient = publicRestClient;
+        this.consumerKey = properties.auth().consumerKey();
+    }
+
+    // For POST /session - authenticate with user-provided credentials
+    public String login(String username, String password) {
+        String directLoginHeader = String.format(
+            "username=%s, password=%s, consumer_key=%s",
+            username, password, consumerKey
+        );
+
+        DirectLoginResponse response = publicRestClient.post()
+            .uri("/my/logins/direct")
+            .header("directlogin", directLoginHeader)
+            .body("{}")
+            .retrieve()
+            .body(DirectLoginResponse.class);
+
+        return response.token();
+    }
+
+    // For GET /users/me - get user details with user's OBP token
+    public UserDetailsResponse getCurrentUser(String obpToken) {
+        String directLoginHeader = "token=" + obpToken;
+
+        return publicRestClient.get()
+            .uri("/obp/v5.1.0/users/current")
+            .header("directlogin", directLoginHeader)
+            .retrieve()
+            .body(UserDetailsResponse.class);
+    }
+}
+```
+
 **Authentication Flow (OBP)**:
 1. Client POSTs to `/session` with `{"username": "...", "password": "..."}`
 2. **Server calls OBP DirectLogin**: `POST {{obp_host}}/my/logins/direct` with DirectLogin Authorization header
@@ -642,9 +707,9 @@ Error Response (401 Unauthorized) - Missing or invalid token:
 
 **OBP Integration (Server-side only - never exposed to client)**:
 - Login: `POST {{obp_host}}/my/logins/direct` (unversioned, no `/obp/vX.X.X` prefix)
-- Login Header: `Authorization: DirectLogin username={{user}},password={{pass}},consumer_key={{key}}`
+- Login Header: `directlogin: username={{user}}, password={{pass}}, consumer_key={{key}}`
 - Login Response: `{"token": "eyJhbGciOiJIUzI1NiJ9..."}`
-- Upstream calls: `Authorization: DirectLogin token={{obp_token}}` (server maps from our_token)
+- Upstream calls: `directlogin: token={{obp_token}}` (server maps from our_token)
 - Consumer key stored in application.yml (never from client)
 - User profile: `GET {{obp_host}}/obp/v5.1.0/users/current` (or latest version)
 
@@ -656,24 +721,27 @@ Error Response (401 Unauthorized) - Missing or invalid token:
 - API responses identical to Phase 1 (except real OBP data in /users/me)
 
 **Tasks**:
-1. Add Spring RestClient configuration for OBP integration
-2. Configure OBP properties in application.yml (host, consumer key)
-3. Update SessionData to include obpToken field
-4. Create ObpClientService that handles DirectLogin authentication using RestClient:
-   - Method: `login(username, password)` → returns OBP token
-   - Method: `getCurrentUser(obpToken)` → returns OBP user data
-5. Update `POST /session` endpoint:
-   - Call ObpClientService.login() instead of accepting any credentials
-   - Store OBP token in SessionData along with username
+1. **Simplify OBP client code**:
+   - Delete: `ObpAuthenticationService`, `DirectLoginInterceptor`, `ObpUserService`, `obpAuthenticatedRestClient` bean
+   - Simplify `ObpProperties.auth` to only have `consumerKey` (remove username/password)
+   - Create new `ObpClient` service with `login(username, password)` and `getCurrentUser(obpToken)` methods
+   - Keep: `ObpProperties`, `DirectLoginResponse`, `UserDetailsResponse`, exception classes, `obpPublicRestClient` bean
+2. Update `InMemorySessionTokenStore.SessionData` to include `obpToken` field
+3. Update `POST /session` endpoint:
+   - Call `ObpClient.login(username, password)` instead of accepting any credentials
+   - Store OBP token in SessionData: `tokenStore.create(username, obpToken)`
    - Handle OBP errors (unreachable, invalid credentials) and map to appropriate HTTP responses
-6. Update BearerTokenAuthenticationFilter:
-   - Store OBP token in authentication context (for use by downstream controllers)
-7. Update `GET /users/me` endpoint:
-   - Extract OBP token from authentication context
-   - Call ObpClientService.getCurrentUser(obpToken)
-   - Return upstream OBP response (add HAL links)
+4. Update `SessionTokenStore` interface:
+   - Change `create(String username)` to `create(String username, String obpToken)`
+   - `SessionPrincipal` should include `obpToken` field
+5. Update `UuidBearerTokenAuthFilter`:
+   - Store OBP token in `SessionPrincipal` (for use by downstream controllers)
+6. Update `GET /users/me` endpoint:
+   - Extract OBP token from `SessionPrincipal` in authentication context
+   - Call `ObpClient.getCurrentUser(obpToken)`
+   - Map `UserDetailsResponse` to `UserResponse` (add HAL links)
    - Handle OBP errors (token expired, unreachable) and return appropriate responses
-8. Test complete session lifecycle with real OBP credentials
+7. Test complete session lifecycle with real OBP credentials
 
 **Updated Current User Endpoint** (`GET /users/me`) - With OBP:
 

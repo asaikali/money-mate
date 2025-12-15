@@ -36,9 +36,9 @@ public class UuidBearerTokenAuthFilter extends OncePerRequestFilter {
 
             if (token != null) {
                 tokenStore.find(token).ifPresent(session -> {
-                    // Create Authentication with SessionPrincipal
+                    // Create Authentication with SessionPrincipal as the principal
                     var auth = new UsernamePasswordAuthenticationToken(
-                        session.principal(), null, session.authorities());
+                        session, null, session.authorities());
                     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 });

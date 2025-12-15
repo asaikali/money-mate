@@ -7,10 +7,11 @@ import java.util.Collections;
 
 public record SessionPrincipal(
     String subject,
+    String obpToken,
     Collection<? extends GrantedAuthority> authorities
 ) {
-    public SessionPrincipal(String subject) {
-        this(subject, Collections.emptyList());
+    public SessionPrincipal(String subject, String obpToken) {
+        this(subject, obpToken, Collections.emptyList());
     }
 
     public Object principal() {

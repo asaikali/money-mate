@@ -1,6 +1,13 @@
 package com.example.moneymate.api.user;
 
+import com.example.moneymate.api.obp.client.ObpClient;
+import com.example.moneymate.api.obp.client.ObpClientException;
+import com.example.moneymate.api.obp.client.UserDetailsResponse;
+import com.example.moneymate.api.security.SessionPrincipal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.Link;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,21 +22,49 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RequestMapping("/users")
 public class UserController {
 
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+
+    private final ObpClient obpClient;
+
+    public UserController(ObpClient obpClient) {
+        this.obpClient = obpClient;
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser() {
-        // Get username from SecurityContextHolder
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = (String) authentication.getPrincipal();
+        try {
+            // Get SessionPrincipal from SecurityContextHolder
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            SessionPrincipal principal = (SessionPrincipal) authentication.getPrincipal();
 
-        // Return stubbed user data (Phase 1)
-        UserResponse response = UserResponse.stubbed(username);
+            // Fetch real user data from OBP
+            UserDetailsResponse obpUser = obpClient.getCurrentUser(principal.obpToken());
 
-        Link selfLink = linkTo(methodOn(UserController.class).getCurrentUser()).withSelfRel();
-        Link rootLink = Link.of("/", "root");
+            // Map OBP response to our UserResponse
+            UserResponse response = new UserResponse(
+                obpUser.userId(),
+                obpUser.username(),
+                obpUser.provider()
+            );
 
-        response.add(selfLink);
-        response.add(rootLink);
+            Link selfLink = linkTo(methodOn(UserController.class).getCurrentUser()).withSelfRel();
+            Link rootLink = Link.of("/", "root");
 
-        return ResponseEntity.ok(response);
+            response.add(selfLink);
+            response.add(rootLink);
+
+            return ResponseEntity.ok(response);
+
+        } catch (ObpClientException e) {
+            log.error("Failed to fetch user details from OBP: {}", e.getMessage(), e);
+            return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(null);
+        } catch (Exception e) {
+            log.error("Unexpected error fetching user details: {}", e.getMessage(), e);
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(null);
+        }
     }
 }

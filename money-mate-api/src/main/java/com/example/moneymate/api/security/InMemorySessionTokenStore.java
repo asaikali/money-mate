@@ -23,9 +23,9 @@ public class InMemorySessionTokenStore implements SessionTokenStore {
     }
 
     @Override
-    public String create(String username) {
+    public String create(String username, String obpToken) {
         String token = TOKEN_PREFIX + UUID.randomUUID();
-        SessionPrincipal principal = new SessionPrincipal(username);
+        SessionPrincipal principal = new SessionPrincipal(username, obpToken);
         sessions.put(token, principal);
         return token;
     }
