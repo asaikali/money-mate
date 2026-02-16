@@ -28,7 +28,7 @@ class ApiRootControllerTest {
     void getRoot_shouldReturn200WithHalJson() throws Exception {
         mockMvc.perform(get("/"))
             .andExpect(status().isOk())
-            .andExpect(content().contentType("application/hal+json"));
+            .andExpect(content().contentType("application/prs.hal-forms+json"));
     }
 
     @Test
@@ -47,7 +47,7 @@ class ApiRootControllerTest {
         mockMvc.perform(get("/"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$._links.self").exists())
-            .andExpect(jsonPath("$._links.self.href").value("/"));
+            .andExpect(jsonPath("$._links.self.href").value("http://localhost/"));
     }
 
     @Test
@@ -69,7 +69,7 @@ class ApiRootControllerTest {
             .andExpect(jsonPath("$._links.self").exists())
             .andExpect(jsonPath("$._links.profile").exists())
             .andExpect(jsonPath("$._links.*").isArray())
-            .andExpect(jsonPath("$._links.*").value(org.hamcrest.collection.IsCollectionWithSize.hasSize(2)));
+            .andExpect(jsonPath("$._links.*").value(org.hamcrest.collection.IsCollectionWithSize.hasSize(3)));
     }
 
     @Test

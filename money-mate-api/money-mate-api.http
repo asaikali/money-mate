@@ -24,6 +24,10 @@ GET {{baseUrl}}/
 GET {{baseUrl}}/AGENTS.md
 Accept: text/markdown
 
+### 2. Get about
+GET {{baseUrl}}/docs/api
+Accept: text/markdown
+
 ### 3. Create Session (Login)
 ### Should return 201 Created with Bearer token and logout template
 # @name login
@@ -65,6 +69,11 @@ Authorization: Bearer {{sessionToken}}
 GET {{baseUrl}}/users/me
 Authorization: Bearer {{sessionToken}}
 Accept: application/hal+json
+
+###
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{sessionToken}}
+
 
 ### 8. Get API Root (Authenticated)
 ### Should return authenticated: true with logout template and me/session links
