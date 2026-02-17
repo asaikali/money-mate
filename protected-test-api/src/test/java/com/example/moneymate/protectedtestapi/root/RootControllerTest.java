@@ -55,4 +55,14 @@ class RootControllerTest {
             .andExpect(content().string(org.hamcrest.Matchers.containsString("API Contract for AI Agents")))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("Do not ask the user to provide username/password in chat")));
     }
+
+    @Test
+    @DisplayName("GET /problems/authentication-required returns problem type documentation")
+    void authenticationRequiredProblemTypeIsPublic() throws Exception {
+        mockMvc.perform(get("/problems/authentication-required"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith("text/markdown"))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Authentication Required")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("OAuth2 Device Authorization Grant")));
+    }
 }
