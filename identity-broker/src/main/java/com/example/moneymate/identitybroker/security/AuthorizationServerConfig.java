@@ -13,6 +13,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
@@ -30,8 +32,6 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -69,7 +69,7 @@ public class AuthorizationServerConfig {
         RegisteredClientRepository registeredClientRepository
     ) throws Exception {
         OAuth2AuthorizationServerConfigurer authorizationServerConfigurer =
-            OAuth2AuthorizationServerConfigurer.authorizationServer();
+            new OAuth2AuthorizationServerConfigurer();
         MediaTypeRequestMatcher htmlRequestMatcher = new MediaTypeRequestMatcher(MediaType.TEXT_HTML);
         htmlRequestMatcher.setIgnoredMediaTypes(Set.of(MediaType.ALL));
         RequestMatcher browserGetRequestMatcher = new AndRequestMatcher(
@@ -80,6 +80,8 @@ public class AuthorizationServerConfig {
         http
             .securityMatcher(authorizationServerConfigurer.getEndpointsMatcher())
             .with(authorizationServerConfigurer, authorizationServer -> authorizationServer
+                .deviceAuthorizationEndpoint(Customizer.withDefaults())
+                .deviceVerificationEndpoint(Customizer.withDefaults())
                 .oidc(Customizer.withDefaults())
                 .clientAuthentication(clientAuthentication -> clientAuthentication
                     .authenticationConverters(authenticationConverters ->
