@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.8</version>
+        <version>4.0.2</version>
         <relativePath/>
     </parent>
 
@@ -21,7 +21,7 @@
 
     <properties>
         <java.version>25</java.version>
-        <spring-ai.version>1.1.2</spring-ai.version>
+        <spring-ai.version>2.0.0-M2</spring-ai.version>
     </properties>
 
     <modules>
