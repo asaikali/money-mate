@@ -2,8 +2,9 @@
 ###
 ### Purpose:
 ### 1) Inspect hypermedia controls at API root
-### 2) Run OAuth device flow manually against identity-broker
-### 3) Call protected endpoint with the broker-issued bearer token
+### 2) Explore RFC 9728 protected resource metadata discovery from a 401 challenge
+### 3) Run OAuth device flow manually against identity-broker
+### 4) Call protected endpoint with the broker-issued bearer token
 ###
 ### Notes:
 ### - This file does NOT start app processes.
@@ -15,7 +16,7 @@
 ### IntelliJ tip:
 ### - Response handler scripts in this file store values globally:
 ###   {{deviceCode}}, {{userCode}}, {{verificationUri}},
-###   {{verificationUriComplete}}, {{accessToken}}
+###   {{verificationUriComplete}}, {{accessToken}}, {{resourceMetadataUrl}}
 
 @protectedApiUrl = http://localhost:8082
 @brokerUrl = http://localhost:9000
@@ -26,6 +27,7 @@
 ### Should include:
 ### - _links.profile -> /AGENTS.md
 ### - _links.authorization-server-metadata
+### - _links.oauth-protected-resource-metadata
 ### - _templates.start-device-flow
 GET {{protectedApiUrl}}/
 Accept: application/prs.hal-forms+json
@@ -39,6 +41,39 @@ Accept: text/markdown
 ### 3) Broker Discovery Metadata
 ### Inspect token and device endpoints exposed by identity-broker.
 GET {{brokerUrl}}/.well-known/openid-configuration
+Accept: application/json
+
+### 3b) Protected Resource Metadata (RFC 9728)
+GET {{protectedApiUrl}}/.well-known/oauth-protected-resource
+Accept: application/json
+
+### 3c) Trigger 401 challenge and extract resource_metadata URL
+### Should return:
+### - 401 Unauthorized
+### - WWW-Authenticate: Bearer ... resource_metadata="..."
+# @name metadataChallenge
+GET {{protectedApiUrl}}/protected
+Accept: application/json
+
+> {%
+  const challenge =
+    response.headers.valueOf("WWW-Authenticate")
+    || response.headers.valueOf("www-authenticate")
+    || "";
+
+  client.global.set("wwwAuthenticate", challenge);
+  const match = /resource_metadata="([^"]+)"/.exec(challenge);
+  if (match) {
+    client.global.set("resourceMetadataUrl", match[1]);
+    client.log("resource_metadata extracted: " + match[1]);
+  } else {
+    client.log("resource_metadata not found in WWW-Authenticate: " + challenge);
+  }
+%}
+
+### 3d) Follow resource_metadata URL discovered from WWW-Authenticate
+### If step 3c did not extract the variable, run 3c first.
+GET {{resourceMetadataUrl}}
 Accept: application/json
 
 
@@ -94,7 +129,7 @@ Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 
-### 7) Negative Test - No Token
-### Should return 401 + WWW-Authenticate: Bearer
+### 7) Negative Test (post-login) - No Token
+### Should still return 401 + WWW-Authenticate including resource_metadata
 GET {{protectedApiUrl}}/protected
 Accept: application/json

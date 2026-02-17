@@ -63,6 +63,7 @@ You should see these expected values in the response:
 2. device authorization endpoint: `http://localhost:9000/oauth2/device_authorization`
 3. `client_id`: `protected-test-api-hypermedia-client`
 4. `scope`: `hypermedia.access`
+5. protected resource metadata link: `/.well-known/oauth-protected-resource`
 
 ## 3. Inspect auth server metadata (human-readable first)
 
@@ -76,6 +77,12 @@ For local dev, these well-known endpoints are fixed:
 
 1. Device authorization: `http://localhost:9000/oauth2/device_authorization`
 2. Token endpoint: `http://localhost:9000/oauth2/token`
+
+Protected resource metadata endpoint:
+
+```shell
+http GET :8082/.well-known/oauth-protected-resource
+```
 
 ## 4. Start device authorization
 
@@ -152,7 +159,7 @@ http GET :8082/protected
 Expected:
 
 1. HTTP 401
-2. `WWW-Authenticate: Bearer`
+2. `WWW-Authenticate: Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource"`
 
 ## Common errors
 

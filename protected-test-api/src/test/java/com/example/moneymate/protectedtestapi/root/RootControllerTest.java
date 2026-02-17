@@ -31,6 +31,8 @@ class RootControllerTest {
             .andExpect(jsonPath("$._links.profile.type").value("text/markdown"))
             .andExpect(jsonPath("$._links.protected.href").value("/protected"))
             .andExpect(jsonPath("$._links.protected.type").value("application/json"))
+            .andExpect(jsonPath("$._links.oauth-protected-resource-metadata.href")
+                .value("/.well-known/oauth-protected-resource"))
             .andExpect(jsonPath("$._links.authorization-server-metadata.href")
                 .value("http://localhost:9000/.well-known/openid-configuration"))
             .andExpect(jsonPath("$._templates.start-device-flow.method").value("POST"))

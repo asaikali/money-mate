@@ -38,12 +38,14 @@ public class RootController {
         For protected endpoints, obtain an access token from the authorization server using OAuth2 Device Flow.
         
         1. Discover auth metadata and device-flow controls from the API response.
-        2. Start device authorization using the provided template/endpoint.
-        3. Present `verification_uri_complete` to the user and ask them to open it.
-        4. If `verification_uri_complete` is not provided, present `verification_uri` and `user_code`.
-        5. Ask the user to confirm when they have completed login/consent.
-        6. Exchange the `device_code` at the token endpoint until an `access_token` is returned.
-        7. Call protected endpoints with `Authorization: Bearer <access_token>`.
+        2. If a protected call returns `401`, read `WWW-Authenticate` and follow `resource_metadata`.
+        3. Fetch OAuth protected resource metadata from `/.well-known/oauth-protected-resource`.
+        4. Start device authorization using the provided template/endpoint.
+        5. Present `verification_uri_complete` to the user and ask them to open it.
+        6. If `verification_uri_complete` is not provided, present `verification_uri` and `user_code`.
+        7. Ask the user to confirm when they have completed login/consent.
+        8. Exchange the `device_code` at the token endpoint until an `access_token` is returned.
+        9. Call protected endpoints with `Authorization: Bearer <access_token>`.
         
         Do not ask the user to provide username/password in chat.
         
@@ -73,6 +75,10 @@ public class RootController {
             .withRel(LinkRelation.of("protected"))
             .withType(MediaType.APPLICATION_JSON_VALUE)
             .withTitle("Protected resource requiring bearer token"));
+        response.add(Link.of("/.well-known/oauth-protected-resource")
+            .withRel(LinkRelation.of("oauth-protected-resource-metadata"))
+            .withType(MediaType.APPLICATION_JSON_VALUE)
+            .withTitle("RFC 9728 OAuth protected resource metadata"));
         response.add(Link.of(identityBrokerProperties.getMetadataUri())
             .withRel(LinkRelation.of("authorization-server-metadata"))
             .withType(MediaType.APPLICATION_JSON_VALUE)
