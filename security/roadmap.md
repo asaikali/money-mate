@@ -10,6 +10,10 @@ This document captures the phased plan to evolve Money Mate from local session a
 4. Scope: `hypermedia.access`.
 5. Access token TTL: 15 minutes.
 6. `money-mate-api` will stop using `/session`.
+7. Phase 1 audience is `protected-test-api`.
+8. For device flow bootstrap, `protected-test-api` provides hypermedia instructions, but agent calls `identity-broker` endpoints directly.
+9. `protected-test-api` does not proxy or orchestrate device flow in Phase 1.
+10. Phase transitions require explicit user approval before implementation continues.
 
 ## Phase Overview
 
@@ -24,16 +28,24 @@ This document captures the phased plan to evolve Money Mate from local session a
 ## Phase 1 - Device Flow Proof
 
 ### Goal
-Prove an AI agent can complete OAuth device flow end-to-end and access a protected HATEOAS endpoint without copy/pasting credentials into chat.
+Prove an AI agent can complete OAuth device flow end-to-end and access a protected HATEOAS endpoint without copy/pasting credentials into chat. Phase 1 focuses purely on device flow, not protected resource metadata.
 
 ### Build
 1. New module: `identity-broker` (Spring Authorization Server).
 2. New module: `protected-test-api` (Spring Boot API + HATEOAS + resource server).
-3. `protected-test-api` root returns HAL-FORMS and advertises auth discovery.
-4. `GET /protected` requires JWT and returns diagnostic payload:
-   - success message
-   - current timestamp
+3. `protected-test-api` root returns HAL-FORMS and includes a device-flow bootstrap template.
+4. Root includes:
+   - link to `identity-broker` discovery/metadata
+   - HAL-FORMS template for starting device flow:
+     - method: `POST`
+     - target: broker `device_authorization_endpoint`
+     - properties: `client_id=money-mate-hypermedia-client`, `scope=hypermedia.access`
+5. Agent executes device-flow calls against `identity-broker` directly.
+6. `GET /protected` requires JWT and returns diagnostic payload:
+   - short success message
+   - current timestamp (changes every call)
    - authenticated user context from token claims (safe subset)
+7. Unauthorized access to `/protected` returns plain `401` and `WWW-Authenticate: Bearer` (no RFC 9728 signaling in this phase).
 
 ### JWT Validation Rules in `protected-test-api`
 1. Valid signature (broker JWKS).
@@ -46,6 +58,7 @@ Prove an AI agent can complete OAuth device flow end-to-end and access a protect
 1. RFC 9728 protected resource metadata.
 2. `money-mate-api` integration.
 3. Credential broker and token exchange.
+4. Any custom `/session` login endpoint.
 
 ### Exit Criteria
 1. Agent starts from API root.
@@ -53,6 +66,8 @@ Prove an AI agent can complete OAuth device flow end-to-end and access a protect
 3. Agent presents verification URL to human.
 4. Human logs in via browser.
 5. Agent obtains JWT and successfully calls `/protected`.
+6. Agent can complete flow with manual retry (human says "done") even if it does not do background polling.
+7. Agent does not request username/password in chat for API login.
 
 ## Phase 2 - Protected Resource Metadata (RFC 9728)
 
@@ -61,11 +76,13 @@ Reduce manual hinting by letting agents discover auth requirements through stand
 
 ### Build
 1. Add `/.well-known/oauth-protected-resource` to `protected-test-api`.
-2. Return `401` with `WWW-Authenticate: Bearer` including metadata reference.
+2. Return `401` with `WWW-Authenticate: Bearer` including protected resource metadata reference.
 3. Keep root HAL-FORMS links aligned with discovery metadata.
+4. Preserve Phase 1 device-flow bootstrap template and behavior.
 
 ### Exit Criteria
-1. Agent can recover from `401` using metadata and complete auth with fewer hints.
+1. Agent can recover from `401` using metadata and complete auth with fewer hints than Phase 1.
+2. Agent no longer depends on manual auth hints beyond normal API discovery.
 
 ## Phase 3 - Integrate JWT Auth into `money-mate-api`
 
@@ -136,4 +153,3 @@ Prepare the architecture for reliability, observability, and security controls.
 
 ### Exit Criteria
 1. End-to-end system has reproducible security behavior and operational playbooks.
-
