@@ -64,7 +64,7 @@ Money Mate uses standards-based OAuth/OIDC for agent-driven access without expos
 ## Phase Overview
 
 1. Phase 1: Device Flow Proof with `identity-broker` + `protected-test-api` (Completed on February 17, 2026)
-2. Phase 2: Platform baseline upgrade (Spring Boot 4 / Spring AI)
+2. Phase 2: Platform baseline upgrade (Spring Boot 4 / Spring AI) (Completed on February 17, 2026)
 3. Phase 3: Protected Resource Metadata (RFC 9728)
 4. Phase 4: Integrate JWT auth into `money-mate-api`
 5. Phase 5: Build `credential-broker`
@@ -121,6 +121,9 @@ Prove an AI agent can complete OAuth device flow end-to-end and access a protect
 7. Agent does not request username/password in chat for API login.
 
 ## Phase 2 - Platform Baseline Upgrade (Spring Boot 4 / Spring AI)
+
+### Status
+Completed on February 17, 2026.
 
 ### Goal
 Adopt the Spring Boot 4 and Spring AI 2.0.0-M2 baseline to unlock newer Spring Security/OAuth capabilities while preserving Phase 1 behavior.
