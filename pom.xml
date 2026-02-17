@@ -28,6 +28,8 @@
         <module>money-mate-api</module>
         <module>money-mate-agent</module>
         <module>http-session-mcp</module>
+        <module>identity-broker</module>
+        <module>protected-test-api</module>
     </modules>
 
 

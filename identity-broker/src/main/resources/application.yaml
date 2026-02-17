@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: identity-broker
+
+server:
+  port: 9000
+
+identity-broker:
+  issuer-uri: http://localhost:9000
+  test-user:
+    username: demo
+    password: demo
