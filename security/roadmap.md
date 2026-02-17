@@ -15,6 +15,45 @@ This document captures the phased plan to evolve Money Mate from local session a
 9. `protected-test-api` does not proxy or orchestrate device flow in Phase 1.
 10. Phase transitions require explicit user approval before implementation continues.
 
+## North Star End State
+
+Money Mate uses standards-based OAuth/OIDC for agent-driven access without exposing human credentials in chat. A human authenticates through `identity-broker`, the agent receives scoped/audience-bound tokens, `money-mate-api` enforces token validation plus resource-level authorization, and downstream OBP credentials are brokered through a dedicated `credential-broker` flow.
+
+## End-to-End Sequence (Target Architecture)
+
+1. Human asks an agent to use `money-mate-api`.
+2. Agent discovers auth requirements via HATEOAS controls and metadata.
+3. Agent starts device authorization flow with `identity-broker`.
+4. Human completes browser login/consent.
+5. Agent gets JWT for `aud=money-mate-api` and calls `money-mate-api`.
+6. `money-mate-api` validates JWT and authorizes actions using identity + business entitlements.
+7. When OBP credentials are needed, `money-mate-api` exchanges token context for `aud=credential-broker`.
+8. `money-mate-api` calls `credential-broker` and receives OBP credentials for the authenticated identity.
+9. `money-mate-api` calls OBP and returns HATEOAS responses to the agent.
+
+## Trust Boundaries and Token Audiences
+
+1. `identity-broker` is the token issuer and trust anchor.
+2. `money-mate-api` accepts only tokens intended for `aud=money-mate-api`.
+3. `credential-broker` accepts only tokens intended for `aud=credential-broker`.
+4. User identity comes from broker-issued claims; API permissions still require server-side authorization checks.
+5. Browser login handles human authentication; APIs and agents never require sharing username/password in chat.
+
+## Global Non-Goals
+
+1. No custom login/session protocol replacing OAuth standards.
+2. No long-lived broad-scope tokens.
+3. No reliance on client-side hidden behavior for authorization decisions.
+4. No assumption that missing HATEOAS links alone is sufficient security; server checks remain mandatory.
+
+## Program-Level Done Criteria
+
+1. Agent can complete login with browser-based device flow and call protected APIs without credential copy/paste.
+2. Protected APIs validate issuer, audience, scope, signature, and expiry consistently.
+3. `money-mate-api` no longer depends on `/session`-issued local tokens.
+4. Downstream OBP access is performed through brokered identity and token-exchange controls.
+5. System has auditable security events and reproducible operational runbooks.
+
 ## Phase Overview
 
 1. Phase 1: Device Flow Proof with `identity-broker` + `protected-test-api`
