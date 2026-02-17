@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -31,7 +32,15 @@ class ProtectedControllerTest {
             .andExpect(status().isUnauthorized())
             .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, containsString("Bearer")))
             .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE,
-                containsString("resource_metadata=\"http://localhost/.well-known/oauth-protected-resource\"")));
+                containsString("resource_metadata=\"http://localhost/.well-known/oauth-protected-resource\"")))
+            .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
+            .andExpect(header().string("Pragma", "no-cache"))
+            .andExpect(header().string(HttpHeaders.CONTENT_TYPE, containsString(MediaType.APPLICATION_PROBLEM_JSON_VALUE)))
+            .andExpect(jsonPath("$.type").value("http://localhost/problems/authentication-required"))
+            .andExpect(jsonPath("$.title").value("Authentication required"))
+            .andExpect(jsonPath("$.status").value(401))
+            .andExpect(jsonPath("$.detail").value(
+                "A Bearer access token is required. Read the WWW-Authenticate header for OAuth metadata discovery, then go to API root (/) to learn this API's authentication flow."));
     }
 
     @Test

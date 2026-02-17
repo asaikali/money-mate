@@ -51,6 +51,7 @@ Accept: application/json
 ### Should return:
 ### - 401 Unauthorized
 ### - WWW-Authenticate: Bearer ... resource_metadata="..."
+### - application/problem+json body with detail explaining next steps
 # @name metadataChallenge
 GET {{protectedApiUrl}}/protected
 Accept: application/json
@@ -69,6 +70,7 @@ Accept: application/json
   } else {
     client.log("resource_metadata not found in WWW-Authenticate: " + challenge);
   }
+  client.log("problem detail: " + (response.body?.detail || "(missing)"));
 %}
 
 ### 3d) Follow resource_metadata URL discovered from WWW-Authenticate

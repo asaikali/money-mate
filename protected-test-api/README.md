@@ -84,6 +84,12 @@ Protected resource metadata endpoint:
 http GET :8082/.well-known/oauth-protected-resource
 ```
 
+Problem type documentation endpoint:
+
+```shell
+http GET :8082/problems/authentication-required
+```
+
 ## 4. Start device authorization
 
 Run request and inspect response:
@@ -160,6 +166,11 @@ Expected:
 
 1. HTTP 401
 2. `WWW-Authenticate: Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource"`
+3. `Content-Type: application/problem+json`
+4. JSON body `detail` explains:
+   - a Bearer token is required
+   - inspect `WWW-Authenticate` for OAuth metadata discovery
+   - return to API root (`/`) to learn the API auth flow
 
 ## Common errors
 
