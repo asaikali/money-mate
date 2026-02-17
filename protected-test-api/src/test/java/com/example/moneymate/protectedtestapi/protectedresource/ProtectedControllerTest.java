@@ -5,9 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -23,11 +25,13 @@ class ProtectedControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    @DisplayName("GET /protected without token returns bare 401 Bearer challenge")
+    @DisplayName("GET /protected without token returns Bearer challenge with resource metadata reference")
     void protectedWithoutTokenReturns401WithBearerHeader() throws Exception {
         mockMvc.perform(get("/protected"))
             .andExpect(status().isUnauthorized())
-            .andExpect(header().string("WWW-Authenticate", "Bearer"));
+            .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, containsString("Bearer")))
+            .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE,
+                containsString("resource_metadata=\"http://localhost/.well-known/oauth-protected-resource\"")));
     }
 
     @Test
