@@ -10,7 +10,9 @@ This repository is an experimentation platform for API and agent architecture de
 
 1. Auth model for protected APIs: OAuth 2.0 Resource Server with JWT access tokens.
 2. Human login UX for agents: Device Authorization Flow.
-3. Client ID: `money-mate-hypermedia-client`.
+3. Public client IDs:
+   - `protected-test-api-hypermedia-client` for `protected-test-api`
+   - `money-mate-hypermedia-client` for `money-mate-api`
 4. Scope: `hypermedia.access`.
 5. Access token TTL: 15 minutes.
 6. `money-mate-api` will stop using `/session`.
@@ -18,6 +20,7 @@ This repository is an experimentation platform for API and agent architecture de
 8. For device flow bootstrap, `protected-test-api` provides hypermedia instructions, but agent calls `identity-broker` endpoints directly.
 9. `protected-test-api` does not proxy or orchestrate device flow in Phase 1.
 10. Phase transitions require explicit user approval before implementation continues.
+11. Phase 2 is a dedicated framework baseline upgrade phase (Spring Boot 4.x and Spring AI 2.0.0-M2), followed by RFC 9728 work in Phase 3.
 
 ## North Star End State
 
@@ -60,15 +63,19 @@ Money Mate uses standards-based OAuth/OIDC for agent-driven access without expos
 
 ## Phase Overview
 
-1. Phase 1: Device Flow Proof with `identity-broker` + `protected-test-api`
-2. Phase 2: Protected Resource Metadata (RFC 9728)
-3. Phase 3: Integrate JWT auth into `money-mate-api`
-4. Phase 4: Build `credential-broker`
-5. Phase 5: Add token exchange in `identity-broker`
-6. Phase 6: Wire `money-mate-api` to `credential-broker` and OBP
-7. Phase 7: Security hardening and operations
+1. Phase 1: Device Flow Proof with `identity-broker` + `protected-test-api` (Completed on February 17, 2026)
+2. Phase 2: Platform baseline upgrade (Spring Boot 4 / Spring AI)
+3. Phase 3: Protected Resource Metadata (RFC 9728)
+4. Phase 4: Integrate JWT auth into `money-mate-api`
+5. Phase 5: Build `credential-broker`
+6. Phase 6: Add token exchange in `identity-broker`
+7. Phase 7: Wire `money-mate-api` to `credential-broker` and OBP
+8. Phase 8: Security hardening and operations
 
 ## Phase 1 - Device Flow Proof
+
+### Status
+Completed on February 17, 2026.
 
 ### Goal
 Prove an AI agent can complete OAuth device flow end-to-end and access a protected HATEOAS endpoint without copy/pasting credentials into chat. Phase 1 focuses purely on device flow, not protected resource metadata.
@@ -79,10 +86,11 @@ Prove an AI agent can complete OAuth device flow end-to-end and access a protect
 3. `protected-test-api` root returns HAL-FORMS and includes a device-flow bootstrap template.
 4. Root includes:
    - link to `identity-broker` discovery/metadata
+   - link to `AGENTS.md` profile contract for agent behavior
    - HAL-FORMS template for starting device flow:
      - method: `POST`
      - target: broker `device_authorization_endpoint`
-     - properties: `client_id=money-mate-hypermedia-client`, `scope=hypermedia.access`
+     - properties: `client_id=protected-test-api-hypermedia-client`, `scope=hypermedia.access`
 5. Agent executes device-flow calls against `identity-broker` directly.
 6. `GET /protected` requires JWT and returns diagnostic payload:
    - short success message
@@ -112,7 +120,22 @@ Prove an AI agent can complete OAuth device flow end-to-end and access a protect
 6. Agent can complete flow with manual retry (human says "done") even if it does not do background polling.
 7. Agent does not request username/password in chat for API login.
 
-## Phase 2 - Protected Resource Metadata (RFC 9728)
+## Phase 2 - Platform Baseline Upgrade (Spring Boot 4 / Spring AI)
+
+### Goal
+Adopt the Spring Boot 4 and Spring AI 2.0.0-M2 baseline to unlock newer Spring Security/OAuth capabilities while preserving Phase 1 behavior.
+
+### Build
+1. Upgrade project baseline to Spring Boot 4.x (target `4.0.2`) across modules.
+2. Upgrade Spring AI BOM to `2.0.0-M2` and align AI dependencies.
+3. Resolve migration changes required by Spring Security/OAuth updates and keep tests passing.
+4. Re-verify current Phase 1 device-flow behavior after the framework upgrade.
+
+### Exit Criteria
+1. Build and tests pass on Spring Boot 4.x and Spring AI 2.0.0-M2 baseline.
+2. Phase 1 device-flow demo remains functional after upgrade.
+
+## Phase 3 - Protected Resource Metadata (RFC 9728)
 
 ### Goal
 Reduce manual hinting by letting agents discover auth requirements through standards-based metadata.
@@ -124,10 +147,10 @@ Reduce manual hinting by letting agents discover auth requirements through stand
 4. Preserve Phase 1 device-flow bootstrap template and behavior.
 
 ### Exit Criteria
-1. Agent can recover from `401` using metadata and complete auth with fewer hints than Phase 1.
+1. Agent can recover from `401` using protected resource metadata and complete auth with fewer hints than Phase 1.
 2. Agent no longer depends on manual auth hints beyond normal API discovery.
 
-## Phase 3 - Integrate JWT Auth into `money-mate-api`
+## Phase 4 - Integrate JWT Auth into `money-mate-api`
 
 ### Goal
 Make `money-mate-api` a JWT resource server and remove local session auth.
@@ -142,7 +165,7 @@ Make `money-mate-api` a JWT resource server and remove local session auth.
 ### Exit Criteria
 1. Agent can authenticate and call existing protected Money Mate endpoints with broker-issued JWTs.
 
-## Phase 4 - Build `credential-broker`
+## Phase 5 - Build `credential-broker`
 
 ### Goal
 Introduce a dedicated protected service that returns OBP credentials for an authenticated user identity.
@@ -155,7 +178,7 @@ Introduce a dedicated protected service that returns OBP credentials for an auth
 ### Exit Criteria
 1. `credential-broker` can securely return credentials for authorized identity requests.
 
-## Phase 5 - Token Exchange in `identity-broker`
+## Phase 6 - Token Exchange in `identity-broker`
 
 ### Goal
 Allow `money-mate-api` to exchange user token context for a downstream token with `aud=credential-broker`.
@@ -168,7 +191,7 @@ Allow `money-mate-api` to exchange user token context for a downstream token wit
 ### Exit Criteria
 1. `money-mate-api` can obtain valid exchanged token for credential broker calls.
 
-## Phase 6 - Wire `money-mate-api` -> `credential-broker` -> OBP
+## Phase 7 - Wire `money-mate-api` -> `credential-broker` -> OBP
 
 ### Goal
 Replace static OBP auth with runtime identity-driven credential retrieval.
@@ -182,7 +205,7 @@ Replace static OBP auth with runtime identity-driven credential retrieval.
 ### Exit Criteria
 1. Real Money Mate flows succeed using exchanged downstream tokens and brokered credentials.
 
-## Phase 7 - Hardening and Operations
+## Phase 8 - Hardening and Operations
 
 ### Goal
 Prepare the architecture for reliability, observability, and security controls.
