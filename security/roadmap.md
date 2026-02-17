@@ -2,6 +2,10 @@
 
 This document captures the phased plan to evolve Money Mate from local session auth into an agent-friendly OAuth/OIDC architecture.
 
+## Repository Purpose
+
+This repository is an experimentation platform for API and agent architecture design. The security roadmap is intended to guide iterative validation of standards-based OAuth/OIDC patterns for agent-driven HATEOAS APIs. It is not a claim of production readiness; each phase is designed to isolate and prove specific architectural behaviors.
+
 ## Locked Decisions
 
 1. Auth model for protected APIs: OAuth 2.0 Resource Server with JWT access tokens.
