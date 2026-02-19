@@ -23,6 +23,11 @@
 @clientId = protected-test-api-hypermedia-client
 @scope = hypermedia.access
 
+### 0) Negative Test (post-login) - No Token
+### Should still return 401 + WWW-Authenticate including resource_metadata
+GET {{protectedApiUrl}}/protected
+Accept: application/json
+
 ### 1) Root Hypermedia (HAL-FORMS)
 ### Should include:
 ### - _links.profile -> /AGENTS.md
@@ -131,7 +136,3 @@ Authorization: Bearer {{accessToken}}
 Accept: application/json
 
 
-### 7) Negative Test (post-login) - No Token
-### Should still return 401 + WWW-Authenticate including resource_metadata
-GET {{protectedApiUrl}}/protected
-Accept: application/json
