@@ -1,13 +1,13 @@
 package com.example.moneymate.httpsessionmcp.tools;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -24,11 +24,10 @@ public class HttpGetService {
     private static final String UNSUPPORTED_CONTENT_TYPE = "UNSUPPORTED_CONTENT_TYPE";
     private static final String INVALID_JSON_RESPONSE = "INVALID_JSON_RESPONSE";
 
-    private final RestClient restClient;
+    private final RestClient restClient = RestClient.builder().build();
     private final ObjectMapper objectMapper;
 
-    public HttpGetService(RestClient restClient, ObjectMapper objectMapper) {
-        this.restClient = restClient;
+    public HttpGetService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
@@ -145,7 +144,7 @@ public class HttpGetService {
 
         try {
             return objectMapper.readValue(bodyText, Object.class);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             return new HttpGatewayError(
                 INVALID_JSON_RESPONSE,
                 "Upstream declared JSON but returned an unreadable body."
