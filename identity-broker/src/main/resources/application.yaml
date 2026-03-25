@@ -9,10 +9,13 @@ identity-broker:
   issuer-uri: http://localhost:9000
   default-audiences:
     - http://localhost:9091
-    - money-mate-api-brokered
+    - money-mate-api-token-exchange
   token-exchange-client:
-    client-id: money-mate-api-brokered
-    client-secret: money-mate-api-brokered-secret
+    client-id: money-mate-api-token-exchange
+    client-secret: money-mate-api-token-exchange-secret
+  intellij-http-client:
+    client-id: intellij-http-client
+    redirect-uri: http://127.0.0.1:63342/api/http-client/oauth2/callback
   demo-users:
     - username: katja.fi.29@example.com
       password: ca0317

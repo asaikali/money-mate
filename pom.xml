@@ -27,11 +27,9 @@
 
     <modules>
         <module>money-mate-api</module>
-        <module>money-mate-api-brokered</module>
-        <module>money-mate-agent</module>
+        <module>money-mate-api-token-exchange</module>
         <module>http-session-mcp</module>
         <module>identity-broker</module>
-        <module>protected-test-api</module>
     </modules>
 
 

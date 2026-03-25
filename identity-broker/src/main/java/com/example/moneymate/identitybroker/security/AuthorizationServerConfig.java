@@ -60,7 +60,8 @@ public class AuthorizationServerConfig {
     private static final String SCOPE_HYPERMEDIA_ACCESS = "hypermedia.access";
     private static final String TEST_API_CLIENT_ID = "protected-test-api-hypermedia-client";
     private static final String MONEY_MATE_CLIENT_ID = "money-mate-hypermedia-client";
-    private static final String BROKERED_API_CLIENT_ID = "money-mate-api-brokered";
+    private static final String BROKERED_API_CLIENT_ID = "money-mate-api-token-exchange";
+    private static final String INTELLIJ_HTTP_CLIENT_ID = "intellij-http-client";
     private static final String TEST_API_AUDIENCE = "protected-test-api";
     private static final String MONEY_MATE_AUDIENCE = "money-mate-api";
     private static final Map<String, String> AUDIENCE_BY_CLIENT_ID = Map.of(
@@ -161,8 +162,14 @@ public class AuthorizationServerConfig {
         RegisteredClient protectedTestApiClient = buildPublicDeviceClient(TEST_API_CLIENT_ID);
         RegisteredClient moneyMateClient = buildPublicDeviceClient(MONEY_MATE_CLIENT_ID);
         RegisteredClient brokeredApiClient = buildTokenExchangeClient(identityBrokerProperties);
+        RegisteredClient intellijHttpClient = buildIntellijHttpClient(identityBrokerProperties);
 
-        return new MutableInMemoryRegisteredClientRepository(protectedTestApiClient, moneyMateClient, brokeredApiClient);
+        return new MutableInMemoryRegisteredClientRepository(
+            protectedTestApiClient,
+            moneyMateClient,
+            brokeredApiClient,
+            intellijHttpClient
+        );
     }
 
     @Bean
@@ -241,6 +248,26 @@ public class AuthorizationServerConfig {
                 .build())
             .tokenSettings(TokenSettings.builder()
                 .accessTokenTimeToLive(Duration.ofMinutes(5))
+                .build())
+            .build();
+    }
+
+    private static RegisteredClient buildIntellijHttpClient(IdentityBrokerProperties identityBrokerProperties) {
+        return RegisteredClient.withId(UUID.randomUUID().toString())
+            .clientId(identityBrokerProperties.getIntellijHttpClient().getClientId())
+            .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
+            .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+            .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
+            .redirectUri(identityBrokerProperties.getIntellijHttpClient().getRedirectUri())
+            .scope("openid")
+            .scope("profile")
+            .scope(SCOPE_HYPERMEDIA_ACCESS)
+            .clientSettings(ClientSettings.builder()
+                .requireAuthorizationConsent(true)
+                .requireProofKey(true)
+                .build())
+            .tokenSettings(TokenSettings.builder()
+                .accessTokenTimeToLive(Duration.ofMinutes(15))
                 .build())
             .build();
     }

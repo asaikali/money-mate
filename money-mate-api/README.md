@@ -8,7 +8,7 @@ This module adapts the Open Bank Project (OBP) API into an agent-friendly hyperm
 
 ## Technology Stack
 
-- Spring Boot 3.5.8
+- Spring Boot 4.0.4
 - Spring HATEOAS (HAL+Forms)
 - Spring Web
 - Java 25
@@ -31,5 +31,5 @@ Available profiles:
 
 ## Development Resources
 
-- `obp-api/` - HTTP request collection for testing OBP API
-- `sandbox/` - Docker compose for local OBP instance
+- `../obp/http-client/` - shared HTTP request collection for testing OBP API
+- `../obp/sandbox/` - shared Docker Compose setup for a local OBP instance

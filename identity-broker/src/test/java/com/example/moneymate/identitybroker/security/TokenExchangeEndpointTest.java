@@ -29,8 +29,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Token Exchange Endpoint")
 class TokenExchangeEndpointTest {
 
-    private static final String CLIENT_ID = "money-mate-api-brokered";
-    private static final String CLIENT_SECRET = "money-mate-api-brokered-secret";
+    private static final String CLIENT_ID = "money-mate-api-token-exchange";
+    private static final String CLIENT_SECRET = "money-mate-api-token-exchange-secret";
 
     @Autowired
     private MockMvc mockMvc;
@@ -71,7 +71,7 @@ class TokenExchangeEndpointTest {
                 .subject(subject)
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(300))
-                .audience(List.of("money-mate-api-brokered"))
+                .audience(List.of("money-mate-api-token-exchange"))
                 .claim("scope", "hypermedia.access")
                 .build()))
             .getTokenValue();

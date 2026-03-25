@@ -38,7 +38,16 @@ class AuthorizationServerConfigTest {
     void usesDefaultAudiencesForUnknownClient() {
         assertThat(AuthorizationServerConfig.resolveAudiencesForClientId(
             "goose-dcr-client",
-            List.of("http://localhost:9091", "money-mate-api-brokered")
-        )).containsExactly("http://localhost:9091", "money-mate-api-brokered");
+            List.of("http://localhost:9091", "money-mate-api-token-exchange")
+        )).containsExactly("http://localhost:9091", "money-mate-api-token-exchange");
+    }
+
+    @Test
+    @DisplayName("uses default multi-audience token for intellij http client")
+    void usesDefaultAudiencesForIntellijHttpClient() {
+        assertThat(AuthorizationServerConfig.resolveAudiencesForClientId(
+            "intellij-http-client",
+            List.of("http://localhost:9091", "money-mate-api-token-exchange")
+        )).containsExactly("http://localhost:9091", "money-mate-api-token-exchange");
     }
 }

@@ -1,0 +1,44 @@
+### Identity Broker helper requests
+### Use this file to register an IntelliJ HTTP Client OAuth client for
+### `money-mate-api-token-exchange/money-mate-api.http`.
+###
+### Recommended flow:
+### 1. Run the metadata request to confirm the broker is up.
+### 2. Run the DCR request.
+### 3. Copy the returned `client_id` into:
+###    money-mate-api-token-exchange/http-client.env.json
+
+@baseUrl = http://localhost:9000
+@redirectUri = http://127.0.0.1:63342/api/http-client/oauth2/callback
+@clientName = money-mate-api-token-exchange-intellij
+
+### Authorization Server Metadata
+GET {{baseUrl}}/.well-known/oauth-authorization-server
+
+### Dynamic Client Registration for IntelliJ HTTP Client
+# @name registerIntellijClient
+POST {{baseUrl}}/oauth2/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "client_name": "{{clientName}}",
+  "redirect_uris": [
+    "{{redirectUri}}"
+  ],
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "scope": "openid profile hypermedia.access"
+}
+
+> {%
+  client.global.set("tokenExchangeHttpClientId", response.body.client_id);
+  client.log("Registered client_id: " + response.body.client_id);
+%}
+

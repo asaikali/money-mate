@@ -1,132 +1,78 @@
 # money-mate
 
-*A project for experimenting with agent architectures using Spring AI, Spring HATEOAS, and external
-REST APIs.*
+Money Mate is a webinar/demo repo for exploring two ways AI agents can interact with enterprise APIs:
 
-Money Mate is a small Spring Boot application used to explore how AI-driven agents can interact with
-REST APIs,
-plan multi-step workflows, and reason about API responses at runtime. The goal is to provide a safe
-environment for testing:
+- `money-mate-api`
+  A HATEOAS banking adapter that is easy to drive with a generic agent loop and `curl`.
+- `money-mate-api-token-exchange`
+  The same adapter idea, but secured through a brokered identity flow and used through `http-session-mcp`.
 
-- Agent architecture ideas
-- HATEOAS resource modeling that guides agentic loops
-- External service interaction using real banking-domain APIs
+Supporting modules:
 
-This is a **learning and experimentation project**, not a production financial application.
+- `identity-broker`
+  OAuth 2.0 / OIDC broker with device flow, open dynamic client registration, and demo token exchange.
+- `http-session-mcp`
+  A thin MCP HTTP gateway that authenticates the user, forwards the bearer token, and exposes simple HTTP tools.
 
-## **Open Bank Project (OBP)**
+## Demo 1
 
-Money Mate uses the **Open Bank Project** (OBP) as a realistic external REST API.
+Use `money-mate-api` to show the HATEOAS concept directly.
 
-Key properties:
+- agent uses `curl`
+- API advertises links and forms
+- workflow stays server-driven
 
-- **REST API** (JSON over HTTP)
-- Provides realistic banking-domain endpoints:
-    - Accounts
-    - Transactions
-    - Customers
-    - Views & permissions
-    - Payments
-- Provides relastic dummy data that enables experimentation with agent workflows
+## Demo 2
 
-## **Running OBP with Docker Compose**
+Use `http-session-mcp` with `money-mate-api-token-exchange` to show the same idea with brokered authentication.
 
-Use the included `docker-compose.yaml` from the `sandbox/` directory:
+- Goose authenticates through `identity-broker`
+- `http-session-mcp` forwards the user JWT
+- `money-mate-api-token-exchange` performs OAuth token exchange
+- `identity-broker` turns that into downstream OBP sandbox access
 
-```shell
-docker compose -f sandbox/docker-compose.yaml up -d
+## Modules
+
+- [money-mate-api](/Users/adib/dev/asaikali/money-mate/money-mate-api)
+- [money-mate-api-token-exchange](/Users/adib/dev/asaikali/money-mate/money-mate-api-token-exchange)
+- [http-session-mcp](/Users/adib/dev/asaikali/money-mate/http-session-mcp)
+- [identity-broker](/Users/adib/dev/asaikali/money-mate/identity-broker)
+
+## Default Ports
+
+- `identity-broker`: `9000`
+- `http-session-mcp`: `9091`
+- `money-mate-api`: `8080`
+- `money-mate-api-token-exchange`: `8083`
+
+## Demo Users
+
+These are the sandbox users configured in `identity-broker`:
+
+- `katja.fi.29@example.com` / `ca0317`
+- `timo.fi.29@example.com` / `6addcd`
+- `ellie.de.29@example.com` / `2efb1f`
+
+## Running
+
+Start the broker and MCP server:
+
+```bash
+./mvnw spring-boot:run -q -pl identity-broker
+./mvnw spring-boot:run -q -pl http-session-mcp
 ```
 
-Or run from the sandbox directory:
+Start either API, depending on the demo:
 
-```shell
-cd sandbox
-docker compose up -d
+```bash
+./mvnw spring-boot:run -q -pl money-mate-api
+./mvnw spring-boot:run -q -pl money-mate-api-token-exchange
 ```
 
-## **Validate the OBP API Is Running**
+## Verification
 
-After starting the stack, validate it by calling `/root`:
+Run the reduced reactor tests:
 
-```shell
-curl http://localhost:8081/obp/v6.0.0/root
+```bash
+./mvnw test
 ```
-
-You should receive basic OBP information such as:
-
-- API version
-- Git commit
-
-If this endpoint responds, OBP is successfully running.
-
-## **Default Credentials**
-
-For convenience, the local OBP instance includes default demo credentials:
-
-- **Username:** `admin@example.com`
-- **Password:** `admin123`
-- **Consumer Key:** see "Obtaining a Consumer Key" below
-
-These are sufficient for authentication experiments and agent workflows.
-
-## **Obtaining a Consumer Key**
-
-Before you can authenticate with OBP's DirectLogin API, you need to create a **consumer** (
-application registration). This is a one-time manual step.
-
-### Steps to Create a Consumer
-
-1. **Open the OBP Consumer Registration page** in your browser:
-[http://localhost:8081/consumer-registration](http://localhost:8081/consumer-registration)
-
-2. **Login with the super admin credentials:**
-    - Username: `admin@example.com`
-    - Password: `admin123`
-
-3. **Fill out the consumer registration form:**
-    - **Application Name:** `money-mate`
-    - **Application Type:** Select `Confidential`
-    - **Description:** `Money Mate AI Aigent`
-    - **Developer Email:** `admin@example.com`
-
-4. **Click "Register Consumer"**
-
-5. **Save the credentials** displayed on the confirmation page:
-    - **Consumer Key** (40 characters, e.g., `g0vjy3au0j443wmc24amgdlrngtdszwwe4gmkrxr`)
-    - **Consumer Secret** (40 characters, e.g., `04kjmk2413w1bhtakwhhlufj3iunkfui0zz5224e`)
-    - **Consumer ID** (UUID)
-
-6. **Update your `.env` file** with the consumer credentials:
-   ```bash
-   OBP_CONSUMER_KEY=<paste-your-consumer-key>
-   OBP_CONSUMER_SECRET=<paste-your-consumer-secret>
-   ```
-
-7. **Test your consumer** using the requests in `obp-api/`:
-    - Open `obp-api/00-auth.http` in your IDE
-    - Select the `local` environment from the dropdown
-    - Run the "DirectLogin - Get Token" request
-    - You should receive a JWT token in the response
-
-### Example Consumer Registration Response
-
-After successful registration, you'll see something like this:
-
-```
-Register your consumer
-Thanks for registering your consumer with the Open Bank Project API!
-
-Consumer ID: dba56122-be42-402a-aaa3-bf552173a0a1
-Application Type: Confidential
-Application Name: money-mate-app
-Consumer Key: g0vjy3au0j443wmc24amgdlrngtdszwwe4gmkrxr
-Consumer Secret: 04kjmk2413w1bhtakwhhlufj3iunkfui0zz5224e
-Direct Login Endpoint: http://localhost:8081/my/logins/direct
-```
-
-**Important:** Save both the Consumer Key and Consumer Secret securely. The Consumer Secret may not
-be shown again.
-
-Once you have these credentials, you can use DirectLogin for all API calls and even create
-additional consumers programmatically via the `/management/consumers` endpoint.
-

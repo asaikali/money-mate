@@ -11,15 +11,15 @@ money-mate/
 │   └── .env                          # Environment variables for scripts
 │
 ├── .env.example                       # Template showing required variables
-├── http-client.env.json               # Public HTTP client config (git tracked)
-├── http-client.private.env.json       # Private HTTP client secrets (git ignored)
-│
-├── obp-api/                          # HTTP client request files (organized)
-│   ├── 00-auth.http                  # Authentication
-│   ├── 01-banks.http                 # Bank operations
-│   └── ...                           # Other organized .http files
-└── sandbox/                          # Local sandbox setup (docker-compose, scripts)
-    └── setup-sandbox.sh              # Script that uses .secrets/.env
+├── obp/
+│   ├── obp.md                        # OBP background and context
+│   ├── http-client/                  # HTTP client request files
+│   │   ├── 00-auth.http              # Authentication
+│   │   ├── 01-banks.http             # Bank operations
+│   │   ├── http-client.env.json      # Public HTTP client config (git tracked)
+│   │   └── http-client.private.env.json # Private HTTP client secrets (git ignored)
+│   └── sandbox/                      # Local sandbox setup (docker-compose, scripts)
+│       └── setup-sandbox.sh          # Script that uses .secrets/.env
 ```
 
 ## When to Use Each Approach
@@ -42,10 +42,10 @@ DATABASE_URL=postgres://user:pass@localhost/db
 **Usage:**
 ```bash
 # Scripts automatically use .secrets/.env
-sandbox/setup-sandbox.sh
+obp/sandbox/setup-sandbox.sh
 
 # Or specify a different file
-sandbox/setup-sandbox.sh .secrets/.env.prod
+obp/sandbox/setup-sandbox.sh .secrets/.env.prod
 ```
 
 ### 2. `http-client.private.env.json` - For HTTP Client (IntelliJ/JetBrains IDEs)
@@ -70,7 +70,7 @@ sandbox/setup-sandbox.sh .secrets/.env.prod
 ```
 
 **Usage:**
-1. Open any `.http` file in IntelliJ
+1. Open any `.http` file under `obp/http-client/` in IntelliJ
 2. Select environment from dropdown (dev/public-sandbox)
 3. Run requests - variables auto-filled from env files
 
@@ -89,7 +89,7 @@ sandbox/setup-sandbox.sh .secrets/.env.prod
    ```
 
 3. **For HTTP Client (Optional):**
-   - `http-client.private.env.json` already exists with example values
+   - `obp/http-client/http-client.private.env.json` already exists with example values
    - Update with your actual credentials if using IntelliJ HTTP Client
 
 ### Security Best Practices
@@ -110,9 +110,9 @@ sandbox/setup-sandbox.sh .secrets/.env.prod
 
 | File Type | Location | Git Tracked | Purpose |
 |-----------|----------|-------------|---------|
-| Shell script secrets | `.secrets/.env` | ❌ No | Used by `sandbox/setup-sandbox.sh` |
-| HTTP Client secrets | `http-client.private.env.json` | ❌ No | Used by `.http` files in IDE |
-| HTTP Client public config | `http-client.env.json` | ✅ Yes | Non-sensitive HTTP Client config |
+| Shell script secrets | `.secrets/.env` | ❌ No | Used by `obp/sandbox/setup-sandbox.sh` |
+| HTTP Client secrets | `obp/http-client/http-client.private.env.json` | ❌ No | Used by `.http` files in IDE |
+| HTTP Client public config | `obp/http-client/http-client.env.json` | ✅ Yes | Non-sensitive HTTP Client config |
 | Template/Documentation | `.env.example` | ✅ Yes | Shows what variables are needed |
 | Secrets documentation | `.secrets/README.md` | ✅ Yes | Explains `.secrets/` directory |
 
@@ -146,7 +146,7 @@ nano .secrets/.env  # Fill in values
 ### HTTP Client variables not working
 ```bash
 # Solution: Check file is in project root
-ls -la http-client.private.env.json
+ls -la obp/http-client/http-client.private.env.json
 
 # Make sure you selected an environment in the IDE dropdown
 ```
@@ -154,5 +154,5 @@ ls -la http-client.private.env.json
 ### Want to use different env file
 ```bash
 # Pass custom path to script
-sandbox/setup-sandbox.sh .secrets/.env.staging
+obp/sandbox/setup-sandbox.sh .secrets/.env.staging
 ```

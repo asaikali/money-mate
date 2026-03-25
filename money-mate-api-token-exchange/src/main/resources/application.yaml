@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: money-mate-api-token-exchange
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:9000
+          jwk-set-uri: http://localhost:9000/oauth2/jwks
+          audiences:
+            - money-mate-api-token-exchange
+  # Default profile (used when no profile specified in IntelliJ)
+  profiles:
+    default: public-sandbox
+
+# OBP API Configuration - Common settings
+obp:
+  api:
+    timeout:
+      connect: 10s
+      read: 30s
+
+server:
+  port: 8083
+
+identity-broker:
+  issuer-uri: http://localhost:9000
+  token-uri: http://localhost:9000/oauth2/token
+  token-exchange-client-id: money-mate-api-token-exchange
+  token-exchange-client-secret: money-mate-api-token-exchange-secret
+
+# Profile-specific settings (base-url, version, auth) are in:
+#   - application-local.yaml (local dev)
+#   - application-public-sandbox.yaml (public sandbox)
