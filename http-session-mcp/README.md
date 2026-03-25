@@ -1,18 +1,18 @@
 # http-session-mcp
 
-Streamable MCP server scaffold for a thin authenticated HTTP gateway.
+Streamable MCP server for a thin authenticated HTTP gateway.
 
-## Phase 1
+## Current Scope
 
-This module currently exposes the v1 tool surface with placeholder behavior only.
-The goal of this phase is to lock in:
+This module currently implements a minimal `http_get` tool backed by Spring `RestClient`.
+The initial version intentionally keeps the behavior small:
 
-- module structure
-- Spring Boot and Spring AI MCP wiring
-- tool names and DTOs
-- configuration shape
-
-The HTTP execution and downstream auth logic will be implemented in phase 2.
+- validates absolute `http` and `https` URLs
+- performs a GET request
+- forwards caller headers except `Authorization`, `Cookie`, and `Host`
+- returns only `status`, reduced `headers`, and `body`
+- maps JSON-like responses to JSON objects
+- maps other textual responses to strings
 
 ## Tool Surface
 
@@ -44,5 +44,3 @@ Response:
   }
 }
 ```
-
-In phase 1, `http_get` returns a placeholder `501` response instead of performing I/O.
