@@ -9,10 +9,10 @@ import java.util.Map;
 @Component
 public class HttpSessionTools {
 
-    private final HttpGetService httpGetService;
+    private final HttpRequestService httpRequestService;
 
-    public HttpSessionTools(HttpGetService httpGetService) {
-        this.httpGetService = httpGetService;
+    public HttpSessionTools(HttpRequestService httpRequestService) {
+        this.httpRequestService = httpRequestService;
     }
 
     @McpTool(
@@ -29,6 +29,27 @@ public class HttpSessionTools {
             required = false
         ) Map<String, String> headers
     ) {
-        return httpGetService.get(url, headers);
+        return httpRequestService.get(url, headers);
+    }
+
+    @McpTool(
+        name = "http_post",
+        description = "Perform an HTTP POST to an absolute URL and return a compact response payload."
+    )
+    public Object httpPost(
+        @McpToolParam(
+            description = "Absolute http or https URL to post to.",
+            required = true
+        ) String url,
+        @McpToolParam(
+            description = "Optional safe request headers such as Accept or Content-Type.",
+            required = false
+        ) Map<String, String> headers,
+        @McpToolParam(
+            description = "Request body as either a JSON object/array or a text string.",
+            required = false
+        ) Object body
+    ) {
+        return httpRequestService.post(url, headers, body);
     }
 }

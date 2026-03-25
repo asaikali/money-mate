@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @Service
-public class HttpGetService {
+public class HttpRequestService {
 
     private static final String INVALID_REQUEST = "INVALID_REQUEST";
     private static final String NETWORK_ERROR = "NETWORK_ERROR";
@@ -27,46 +27,21 @@ public class HttpGetService {
     private final RestClient restClient = RestClient.builder().build();
     private final ObjectMapper objectMapper;
 
-    public HttpGetService(ObjectMapper objectMapper) {
+    public HttpRequestService(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
     }
 
     public Object get(String url, Map<String, String> headers) {
         URI uri = validateUrl(url);
         if (uri == null) {
-            return new HttpGatewayError(
-                INVALID_REQUEST,
-                "URL must be an absolute http or https URL."
-            );
+            return invalidRequestError();
         }
 
         try {
             return restClient.get()
                 .uri(uri)
-                .headers(httpHeaders -> applyHeaders(httpHeaders, headers))
-                .exchange((request, response) -> {
-                    HttpHeaders responseHeaders = response.getHeaders();
-                    MediaType contentType = responseHeaders.getContentType();
-                    byte[] bodyBytes = response.getBody().readAllBytes();
-
-                    if (!isSupportedContentType(contentType)) {
-                        return new HttpGatewayError(
-                            UNSUPPORTED_CONTENT_TYPE,
-                            "Only textual and JSON response types are supported."
-                        );
-                    }
-
-                    Object body = mapBody(bodyBytes, contentType);
-                    if (body instanceof HttpGatewayError error) {
-                        return error;
-                    }
-
-                    return new HttpGetResponse(
-                        response.getStatusCode().value(),
-                        extractHeaders(responseHeaders),
-                        body
-                    );
-                });
+                .headers(httpHeaders -> applyHeaders(httpHeaders, headers, null))
+                .exchange((request, response) -> mapResponse(response.getStatusCode().value(), response.getHeaders(), response.getBody().readAllBytes()));
         } catch (ResourceAccessException e) {
             return new HttpGatewayError(
                 NETWORK_ERROR,
@@ -83,6 +58,66 @@ public class HttpGetService {
                 "Unexpected gateway error while processing the response."
             );
         }
+    }
+
+    public Object post(String url, Map<String, String> headers, Object body) {
+        URI uri = validateUrl(url);
+        if (uri == null) {
+            return invalidRequestError();
+        }
+
+        Object requestBody = body == null ? "" : body;
+
+        try {
+            return restClient.post()
+                .uri(uri)
+                .headers(httpHeaders -> applyHeaders(httpHeaders, headers, requestBody))
+                .body(requestBody)
+                .exchange((request, response) -> mapResponse(response.getStatusCode().value(), response.getHeaders(), response.getBody().readAllBytes()));
+        } catch (ResourceAccessException e) {
+            return new HttpGatewayError(
+                NETWORK_ERROR,
+                "Failed to reach the upstream server."
+            );
+        } catch (RestClientException e) {
+            return new HttpGatewayError(
+                NETWORK_ERROR,
+                "HTTP POST failed before a response was received."
+            );
+        } catch (Exception e) {
+            return new HttpGatewayError(
+                NETWORK_ERROR,
+                "Unexpected gateway error while processing the response."
+            );
+        }
+    }
+
+    private HttpGatewayError invalidRequestError() {
+        return new HttpGatewayError(
+            INVALID_REQUEST,
+            "URL must be an absolute http or https URL."
+        );
+    }
+
+    private HttpResponse mapResponse(int status, HttpHeaders responseHeaders, byte[] bodyBytes) {
+        MediaType contentType = responseHeaders.getContentType();
+        if (!isSupportedContentType(contentType)) {
+            return new HttpResponse(
+                status,
+                extractHeaders(responseHeaders),
+                new HttpGatewayError(
+                    UNSUPPORTED_CONTENT_TYPE,
+                    "Only textual and JSON response types are supported."
+                )
+            );
+        }
+
+        Object body = mapBody(bodyBytes, contentType);
+        return new HttpResponse(
+            status,
+            extractHeaders(responseHeaders),
+            body
+        );
     }
 
     private URI validateUrl(String url) {
@@ -105,23 +140,27 @@ public class HttpGetService {
         }
     }
 
-    private void applyHeaders(HttpHeaders outgoingHeaders, Map<String, String> inputHeaders) {
-        if (inputHeaders == null || inputHeaders.isEmpty()) {
-            return;
+    private void applyHeaders(HttpHeaders outgoingHeaders, Map<String, String> inputHeaders, Object requestBody) {
+        if (inputHeaders != null && !inputHeaders.isEmpty()) {
+            inputHeaders.forEach((name, value) -> {
+                if (name == null || value == null) {
+                    return;
+                }
+                String normalized = name.toLowerCase(Locale.ROOT);
+                if ("authorization".equals(normalized)
+                    || "cookie".equals(normalized)
+                    || "host".equals(normalized)) {
+                    return;
+                }
+                outgoingHeaders.set(name, value);
+            });
         }
 
-        inputHeaders.forEach((name, value) -> {
-            if (name == null || value == null) {
-                return;
-            }
-            String normalized = name.toLowerCase(Locale.ROOT);
-            if ("authorization".equals(normalized)
-                || "cookie".equals(normalized)
-                || "host".equals(normalized)) {
-                return;
-            }
-            outgoingHeaders.set(name, value);
-        });
+        if (requestBody != null
+            && !(requestBody instanceof String)
+            && outgoingHeaders.getFirst(HttpHeaders.CONTENT_TYPE) == null) {
+            outgoingHeaders.setContentType(MediaType.APPLICATION_JSON);
+        }
     }
 
     private boolean isSupportedContentType(MediaType contentType) {

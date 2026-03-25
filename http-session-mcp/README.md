@@ -4,11 +4,11 @@ Streamable MCP server for a thin authenticated HTTP gateway.
 
 ## Current Scope
 
-This module currently implements a minimal `http_get` tool backed by Spring `RestClient`.
+This module currently implements minimal `http_get` and `http_post` tools backed by Spring `RestClient`.
 The initial version intentionally keeps the behavior small:
 
 - validates absolute `http` and `https` URLs
-- performs a GET request
+- performs GET and POST requests
 - forwards caller headers except `Authorization`, `Cookie`, and `Host`
 - returns only `status`, reduced `headers`, and `body`
 - maps JSON-like responses to JSON objects
@@ -17,6 +17,7 @@ The initial version intentionally keeps the behavior small:
 ## Tool Surface
 
 - `http_get`
+- `http_post`
 
 ## Contract Shape
 

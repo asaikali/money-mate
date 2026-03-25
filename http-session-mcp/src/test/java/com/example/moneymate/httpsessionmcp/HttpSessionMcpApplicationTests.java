@@ -1,7 +1,7 @@
 package com.example.moneymate.httpsessionmcp;
 
 import com.example.moneymate.httpsessionmcp.tools.HttpGatewayError;
-import com.example.moneymate.httpsessionmcp.tools.HttpGetResponse;
+import com.example.moneymate.httpsessionmcp.tools.HttpResponse;
 import com.example.moneymate.httpsessionmcp.tools.HttpSessionTools;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -42,8 +44,8 @@ class HttpSessionMcpApplicationTests {
             Map.of("Accept", "application/json")
         );
 
-        assertThat(result).isInstanceOf(HttpGetResponse.class);
-        HttpGetResponse response = (HttpGetResponse) result;
+        assertThat(result).isInstanceOf(HttpResponse.class);
+        HttpResponse response = (HttpResponse) result;
 
         assertThat(response.status()).isEqualTo(200);
         assertThat(response.headers()).containsKey("content-type");
@@ -60,8 +62,8 @@ class HttpSessionMcpApplicationTests {
             Map.of("Accept", "text/markdown")
         );
 
-        assertThat(result).isInstanceOf(HttpGetResponse.class);
-        HttpGetResponse response = (HttpGetResponse) result;
+        assertThat(result).isInstanceOf(HttpResponse.class);
+        HttpResponse response = (HttpResponse) result;
 
         assertThat(response.status()).isEqualTo(200);
         assertThat(response.headers()).containsEntry("content-type", "text/markdown;charset=UTF-8");
@@ -75,8 +77,8 @@ class HttpSessionMcpApplicationTests {
             Map.of("Accept", "application/json")
         );
 
-        assertThat(result).isInstanceOf(HttpGetResponse.class);
-        HttpGetResponse response = (HttpGetResponse) result;
+        assertThat(result).isInstanceOf(HttpResponse.class);
+        HttpResponse response = (HttpResponse) result;
 
         assertThat(response.status()).isEqualTo(404);
         assertThat(response.headers()).containsKey("content-type");
@@ -103,8 +105,8 @@ class HttpSessionMcpApplicationTests {
             )
         );
 
-        assertThat(result).isInstanceOf(HttpGetResponse.class);
-        HttpGetResponse response = (HttpGetResponse) result;
+        assertThat(result).isInstanceOf(HttpResponse.class);
+        HttpResponse response = (HttpResponse) result;
 
         assertThat(response.status()).isEqualTo(200);
         assertThat(response.body()).isInstanceOf(Map.class);
@@ -113,6 +115,64 @@ class HttpSessionMcpApplicationTests {
         Map<String, Object> body = (Map<String, Object>) response.body();
         assertThat(body).containsEntry("authorizationPresent", false);
         assertThat(String.valueOf(body.get("accept"))).contains("application/json");
+    }
+
+    @Test
+    void httpPostReturnsJsonBodyAsObject() {
+        Object result = httpSessionTools.httpPost(
+            localUrl("/test/post-json"),
+            Map.of("Accept", "application/json"),
+            Map.of("message", "posted")
+        );
+
+        assertThat(result).isInstanceOf(HttpResponse.class);
+        HttpResponse response = (HttpResponse) result;
+
+        assertThat(response.status()).isEqualTo(200);
+        assertThat(response.body()).isInstanceOf(Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.body();
+        assertThat(body).containsEntry("message", "posted");
+    }
+
+    @Test
+    void httpPostReturnsTextBodyAsString() {
+        Object result = httpSessionTools.httpPost(
+            localUrl("/test/post-text"),
+            Map.of(
+                "Accept", "text/plain",
+                "Content-Type", "text/plain"
+            ),
+            "posted text"
+        );
+
+        assertThat(result).isInstanceOf(HttpResponse.class);
+        HttpResponse response = (HttpResponse) result;
+
+        assertThat(response.status()).isEqualTo(200);
+        assertThat(response.headers()).containsEntry("content-type", "text/plain;charset=UTF-8");
+        assertThat(response.body()).isEqualTo("posted text");
+    }
+
+    @Test
+    void httpPostIgnoresAuthorizationHeader() {
+        Object result = httpSessionTools.httpPost(
+            localUrl("/test/post-headers"),
+            Map.of(
+                "Authorization", "Bearer should-not-pass",
+                "Content-Type", "application/json"
+            ),
+            Map.of("message", "body")
+        );
+
+        assertThat(result).isInstanceOf(HttpResponse.class);
+        HttpResponse response = (HttpResponse) result;
+
+        assertThat(response.status()).isEqualTo(200);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.body();
+        assertThat(body).containsEntry("authorizationPresent", false);
+        assertThat(body).containsEntry("message", "body");
     }
 
     private String localUrl(String path) {
@@ -150,6 +210,26 @@ class HttpSessionMcpApplicationTests {
                 "authorizationPresent", authorization != null,
                 "accept", accept == null ? "" : accept
             );
+        }
+
+        @PostMapping(value = "/test/post-json", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+        Map<String, Object> postJson(@RequestBody Map<String, Object> body) {
+            return body;
+        }
+
+        @PostMapping(value = "/test/post-text", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+        String postText(@RequestBody String body) {
+            return body;
+        }
+
+        @PostMapping(value = "/test/post-headers", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+        Map<String, Object> postHeaders(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+            @RequestBody Map<String, Object> body
+        ) {
+            Map<String, Object> response = new java.util.LinkedHashMap<>(body);
+            response.put("authorizationPresent", authorization != null);
+            return response;
         }
     }
 }
