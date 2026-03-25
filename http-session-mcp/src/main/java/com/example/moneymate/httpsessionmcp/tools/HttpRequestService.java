@@ -2,6 +2,9 @@ package com.example.moneymate.httpsessionmcp.tools;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
@@ -156,6 +159,11 @@ public class HttpRequestService {
             });
         }
 
+        String bearerToken = resolveBearerToken();
+        if (bearerToken != null) {
+            outgoingHeaders.setBearerAuth(bearerToken);
+        }
+
         if (requestBody != null
             && !(requestBody instanceof String)
             && outgoingHeaders.getFirst(HttpHeaders.CONTENT_TYPE) == null) {
@@ -215,5 +223,13 @@ public class HttpRequestService {
         if (value != null) {
             target.put(name.toLowerCase(Locale.ROOT), value);
         }
+    }
+
+    private String resolveBearerToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+            return jwtAuthenticationToken.getToken().getTokenValue();
+        }
+        return null;
     }
 }

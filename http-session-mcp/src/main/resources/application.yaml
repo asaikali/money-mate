@@ -1,6 +1,11 @@
 spring:
   application:
     name: http-session-mcp
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:9000/oauth2/jwks
   ai:
     mcp:
       server:
@@ -15,3 +20,7 @@ spring:
 
 server:
   port: 9091
+
+http-session-mcp:
+  authorization-server: http://localhost:9000
+  resource-identifier: http://localhost:9091

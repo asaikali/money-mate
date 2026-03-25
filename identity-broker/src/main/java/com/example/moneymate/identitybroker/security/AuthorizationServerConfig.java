@@ -17,7 +17,9 @@ import org.springframework.security.config.annotation.web.configuration.OAuth2Au
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
@@ -82,6 +84,8 @@ public class AuthorizationServerConfig {
             .with(authorizationServerConfigurer, authorizationServer -> authorizationServer
                 .deviceAuthorizationEndpoint(Customizer.withDefaults())
                 .deviceVerificationEndpoint(Customizer.withDefaults())
+                .clientRegistrationEndpoint(clientRegistration ->
+                    clientRegistration.openRegistrationAllowed(true))
                 .oidc(Customizer.withDefaults())
                 .clientAuthentication(clientAuthentication -> clientAuthentication
                     .authenticationConverters(authenticationConverters ->
@@ -90,7 +94,9 @@ public class AuthorizationServerConfig {
                     .authenticationProvider(
                         new DeviceFlowPublicClientAuthenticationProvider(registeredClientRepository))
                 ))
-            .authorizeHttpRequests(authorize -> authorize.anyRequest().authenticated())
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers("/oauth2/register").permitAll()
+                .anyRequest().authenticated())
             .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
                 new LoginUrlAuthenticationEntryPoint("/login"),
                 browserGetRequestMatcher
@@ -129,11 +135,16 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
+    OAuth2AuthorizationConsentService authorizationConsentService() {
+        return new InMemoryOAuth2AuthorizationConsentService();
+    }
+
+    @Bean
     RegisteredClientRepository registeredClientRepository() {
         RegisteredClient protectedTestApiClient = buildPublicDeviceClient(TEST_API_CLIENT_ID);
         RegisteredClient moneyMateClient = buildPublicDeviceClient(MONEY_MATE_CLIENT_ID);
 
-        return new InMemoryRegisteredClientRepository(protectedTestApiClient, moneyMateClient);
+        return new MutableInMemoryRegisteredClientRepository(protectedTestApiClient, moneyMateClient);
     }
 
     @Bean
@@ -155,11 +166,13 @@ public class AuthorizationServerConfig {
     }
 
     @Bean
-    OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer() {
+    OAuth2TokenCustomizer<JwtEncodingContext> jwtTokenCustomizer(
+        @Value("${identity-broker.default-audience:http://localhost:9091}") String defaultAudience
+    ) {
         return context -> {
             if (OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
                 String clientId = context.getRegisteredClient().getClientId();
-                String audience = resolveAudienceForClientId(clientId);
+                String audience = AUDIENCE_BY_CLIENT_ID.getOrDefault(clientId, defaultAudience);
                 context.getClaims().audience(List.of(audience));
             }
         };

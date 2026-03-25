@@ -7,6 +7,7 @@ server:
 
 identity-broker:
   issuer-uri: http://localhost:9000
+  default-audience: http://localhost:9091
   test-user:
     username: demo
     password: demo

@@ -12,22 +12,40 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
 @Import(HttpSessionMcpApplicationTests.TestConfig.class)
 class HttpSessionMcpApplicationTests {
 
     @Autowired
     private HttpSessionTools httpSessionTools;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @LocalServerPort
     private int port;
@@ -118,6 +136,32 @@ class HttpSessionMcpApplicationTests {
     }
 
     @Test
+    void httpGetForwardsAuthenticatedBearerToken() {
+        Jwt jwt = Jwt.withTokenValue("forward-me")
+            .header("alg", "none")
+            .claim("sub", "demo")
+            .claim("aud", List.of("http://localhost:9091"))
+            .issuedAt(Instant.now())
+            .expiresAt(Instant.now().plusSeconds(300))
+            .build();
+        SecurityContextHolder.getContext().setAuthentication(
+            new JwtAuthenticationToken(jwt, AuthorityUtils.NO_AUTHORITIES)
+        );
+
+        try {
+            Object result = httpSessionTools.httpGet(localUrl("/test/forwarded-auth"), null);
+
+            assertThat(result).isInstanceOf(HttpResponse.class);
+            HttpResponse response = (HttpResponse) result;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = (Map<String, Object>) response.body();
+            assertThat(body).containsEntry("authorization", "Bearer forward-me");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
     void httpPostReturnsJsonBodyAsObject() {
         Object result = httpSessionTools.httpPost(
             localUrl("/test/post-json"),
@@ -175,6 +219,22 @@ class HttpSessionMcpApplicationTests {
         assertThat(body).containsEntry("message", "body");
     }
 
+    @Test
+    void mcpEndpointRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/mcp"))
+            .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void mcpEndpointAcceptsAuthenticatedJwt() throws Exception {
+        mockMvc.perform(get("/mcp")
+                .with(jwt().jwt(jwt -> jwt
+                    .claim("aud", List.of("http://localhost:9091"))
+                    .claim("scope", "hypermedia.access"))))
+            .andExpect(result ->
+                assertThat(result.getResponse().getStatus()).isNotIn(401, 403));
+    }
+
     private String localUrl(String path) {
         return "http://localhost:" + port + path;
     }
@@ -185,6 +245,16 @@ class HttpSessionMcpApplicationTests {
         @Bean
         TestApiController testApiController() {
             return new TestApiController();
+        }
+
+        @Bean
+        @Order(0)
+        SecurityFilterChain testApiSecurityFilterChain(HttpSecurity http) throws Exception {
+            http
+                .securityMatcher("/test/**")
+                .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
+                .csrf(csrf -> csrf.disable());
+            return http.build();
         }
     }
 
@@ -210,6 +280,13 @@ class HttpSessionMcpApplicationTests {
                 "authorizationPresent", authorization != null,
                 "accept", accept == null ? "" : accept
             );
+        }
+
+        @GetMapping(value = "/test/forwarded-auth", produces = MediaType.APPLICATION_JSON_VALUE)
+        Map<String, Object> forwardedAuth(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization
+        ) {
+            return Map.of("authorization", authorization == null ? "" : authorization);
         }
 
         @PostMapping(value = "/test/post-json", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
