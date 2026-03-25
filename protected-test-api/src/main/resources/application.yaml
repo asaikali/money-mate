@@ -7,6 +7,8 @@ spring:
         jwt:
           issuer-uri: http://localhost:9000
           jwk-set-uri: http://localhost:9000/oauth2/jwks
+          audiences:
+            - protected-test-api
 
 server:
   port: 8082

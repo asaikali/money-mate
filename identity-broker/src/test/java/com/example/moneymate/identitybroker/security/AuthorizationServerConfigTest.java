@@ -3,6 +3,8 @@ package com.example.moneymate.identitybroker.security;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -29,5 +31,14 @@ class AuthorizationServerConfigTest {
         assertThatThrownBy(() -> AuthorizationServerConfig.resolveAudienceForClientId("unknown-client"))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("No audience configured");
+    }
+
+    @Test
+    @DisplayName("uses default multi-audience token for unknown client ids")
+    void usesDefaultAudiencesForUnknownClient() {
+        assertThat(AuthorizationServerConfig.resolveAudiencesForClientId(
+            "goose-dcr-client",
+            List.of("http://localhost:9091", "money-mate-api-brokered")
+        )).containsExactly("http://localhost:9091", "money-mate-api-brokered");
     }
 }

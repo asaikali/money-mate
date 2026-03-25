@@ -7,7 +7,24 @@ server:
 
 identity-broker:
   issuer-uri: http://localhost:9000
-  default-audience: http://localhost:9091
-  test-user:
-    username: demo
-    password: demo
+  default-audiences:
+    - http://localhost:9091
+    - money-mate-api-brokered
+  token-exchange-client:
+    client-id: money-mate-api-brokered
+    client-secret: money-mate-api-brokered-secret
+  demo-users:
+    - username: katja.fi.29@example.com
+      password: ca0317
+    - username: timo.fi.29@example.com
+      password: 6addcd
+    - username: ellie.de.29@example.com
+      password: 2efb1f
+
+obp:
+  api:
+    base-url: https://apisandbox.openbankproject.com
+    connect-timeout: 10s
+    read-timeout: 30s
+  auth:
+    consumer-key: fxkjmwyvdvavauhk2pauycrtxjofjh5ksayqk150

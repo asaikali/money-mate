@@ -1,0 +1,11 @@
+# Template for application-public-sandbox.yaml
+# Copy this to application-public-sandbox.yaml and fill in your credentials
+
+obp:
+  api:
+    base-url: https://apisandbox.openbankproject.com
+    version: v5.1.0
+  auth:
+    username: your-username@example.com
+    password: your-password
+    consumer-key: your-consumer-key

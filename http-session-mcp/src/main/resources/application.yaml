@@ -6,6 +6,8 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:9000/oauth2/jwks
+          audiences:
+            - http://localhost:9091
   ai:
     mcp:
       server:
@@ -23,4 +25,3 @@ server:
 
 http-session-mcp:
   authorization-server: http://localhost:9000
-  resource-identifier: http://localhost:9091

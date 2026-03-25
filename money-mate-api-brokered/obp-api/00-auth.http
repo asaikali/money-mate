@@ -1,0 +1,45 @@
+###############################################################################
+# OBP Authentication
+###############################################################################
+# Purpose: Authenticate and obtain DirectLogin token
+#
+# IMPORTANT: Run this file FIRST before using any other HTTP files
+# The token is saved globally and shared across all files
+#
+# Environment: Select "dev" (local) or "public-sandbox" (remote) in your IDE
+###############################################################################
+
+### 🔍 Validate OBP is Running
+# Quick health check - does not require authentication
+GET {{host}}/obp/{{api_version}}/root
+
+
+### 🔐 DirectLogin - Get Token
+# Authenticates and saves token globally for use in all other files
+# IMPORTANT: /my/logins/direct is UNVERSIONED - accessed without /obp/vX.X.X prefix
+POST {{host}}/my/logins/direct
+Authorization: DirectLogin username={{admin_username}},password={{admin_password}},consumer_key={{consumer_key}}
+Content-Type: application/json
+
+{}
+
+> {%
+  client.global.set("token", response.body.token);
+  client.log("✅ Token saved! Available as {{token}} in all files");
+%}
+
+
+### 👤 Get Current User
+# Verifies authentication and retrieves user information
+# Saves user_id globally for admin operations
+GET {{host}}/obp/{{api_version}}/users/current
+Authorization: DirectLogin token={{token}}
+
+> {%
+  client.global.set("admin_user_id", response.body.user_id);
+  client.global.set("admin_provider", response.body.provider);
+  client.log("✅ User ID: " + response.body.user_id);
+  client.log("✅ Username: " + response.body.username);
+%}
+
+
