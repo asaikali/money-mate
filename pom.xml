@@ -27,6 +27,7 @@
     <modules>
         <module>money-mate-api</module>
         <module>money-mate-agent</module>
+        <module>http-session-mcp</module>
     </modules>
 
 

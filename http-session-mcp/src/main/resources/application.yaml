@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: http-session-mcp
+  ai:
+    mcp:
+      server:
+        protocol: STREAMABLE
+        name: http-session-mcp
+        version: 1.0.0
+        type: SYNC
+        streamable-http:
+          mcp-endpoint: /mcp
+        annotation-scanner:
+          enabled: true
+
+server:
+  port: 9091
