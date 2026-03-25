@@ -28,7 +28,10 @@ public class BrokeredObpTokenService {
     }
 
     public String currentObpToken() {
+        // The inbound bearer token represents the authenticated human user.
         String subjectToken = currentSubjectToken();
+
+        // Exchange that user token at the identity broker for downstream OBP access.
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", TOKEN_EXCHANGE_GRANT_TYPE);
         formData.add("subject_token", subjectToken);
@@ -37,6 +40,8 @@ public class BrokeredObpTokenService {
 
         try {
             @SuppressWarnings("unchecked")
+            // Authenticate this API as the token-exchange client while presenting the user token
+            // as the subject token being exchanged.
             Map<String, Object> response = restClient.post()
                 .uri(identityBrokerProperties.getTokenUri())
                 .headers(headers -> headers.setBasicAuth(
@@ -47,6 +52,7 @@ public class BrokeredObpTokenService {
                 .retrieve()
                 .body(Map.class);
 
+            // For the webinar demo, the broker returns the OBP DirectLogin token as access_token.
             if (response == null || !(response.get("access_token") instanceof String accessToken) || accessToken.isBlank()) {
                 throw new IllegalStateException("Identity broker token exchange did not return an access_token");
             }
@@ -62,6 +68,7 @@ public class BrokeredObpTokenService {
         if (!(authentication instanceof JwtAuthenticationToken jwtAuthenticationToken)) {
             throw new IllegalStateException("Current request is not authenticated with a JWT bearer token");
         }
+        // The resource server has already validated this JWT before we attempt exchange.
         return jwtAuthenticationToken.getToken().getTokenValue();
     }
 }
