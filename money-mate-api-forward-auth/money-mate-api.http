@@ -1,0 +1,67 @@
+### Money Mate API Forward Auth - IntelliJ HTTP Client
+### This file is intended for JetBrains IDEs with native OAuth support.
+###
+### Setup:
+### 1. In IntelliJ, select the `local` environment for this file.
+### 2. Run an authenticated request. IntelliJ will open the broker login flow.
+### 3. The fixed OAuth client id is `intellij-http-client`.
+###
+### Demo users:
+### - katja.fi.29@example.com / ca0317
+### - timo.fi.29@example.com / 6addcd
+### - ellie.de.29@example.com / 2efb1f
+
+@baseUrl = http://localhost:8084
+### API Root (public)
+GET {{baseUrl}}/
+Accept: application/prs.hal-forms+json
+
+### Agent Instructions (public)
+GET {{baseUrl}}/AGENTS.md
+Accept: text/markdown
+
+### API About Doc (public)
+GET {{baseUrl}}/docs/api
+Accept: text/markdown
+
+### Current User (authenticated)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{$auth.token("identity-broker")}}
+Accept: application/hal+json
+
+### List Accounts (authenticated)
+# @name listAccounts
+GET {{baseUrl}}/accounts
+Authorization: Bearer {{$auth.token("identity-broker")}}
+Accept: application/hal+json
+
+> {%
+  client.log("List Accounts response body: " + JSON.stringify(response.body, null, 2));
+  const accounts = response.body?.accounts ?? [];
+  client.log("Parsed accounts count: " + accounts.length);
+  if (accounts.length > 0) {
+    client.log("First account: " + JSON.stringify(accounts[0], null, 2));
+    const transactionsHref = accounts[0]?._links?.transactions?.href;
+    if (transactionsHref) {
+      client.global.set("transactionsHref", transactionsHref);
+      client.log("Resolved transactionsHref: " + transactionsHref);
+    } else {
+      client.log("No transactions link found on first account");
+    }
+  } else {
+    client.log("No accounts found in response body");
+  }
+%}
+
+### Account Transactions (authenticated)
+### Run `List Accounts` first.
+< {%
+  const transactionsHref = client.global.get("transactionsHref");
+  if (!transactionsHref) {
+    throw new Error("Run `List Accounts` first so transactionsHref is available.");
+  }
+  request.variables.set("transactionsHref", transactionsHref);
+%}
+GET {{baseUrl}}{{transactionsHref}}
+Authorization: Bearer {{$auth.token("identity-broker")}}
+Accept: application/hal+json

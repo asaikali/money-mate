@@ -1,0 +1,4 @@
+obp:
+  api:
+    base-url: http://localhost:10000
+    version: v5.1.0

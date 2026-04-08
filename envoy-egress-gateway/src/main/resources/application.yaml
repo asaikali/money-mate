@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: envoy-egress-gateway
+
+server:
+  port: 10003
+
+identity-broker:
+  token-uri: http://localhost:9000/oauth2/token
+  token-exchange-client-id: money-mate-api-token-exchange
+  token-exchange-client-secret: money-mate-api-token-exchange-secret
+  shared-secret: shared-secret-for-authz

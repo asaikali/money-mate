@@ -1,0 +1,18 @@
+spring:
+  application:
+    name: money-mate-api-forward-auth
+  # Default profile (used when no profile specified in IntelliJ)
+  profiles:
+    default: public-sandbox
+
+# OBP API Configuration - Common settings
+obp:
+  api:
+    base-url: http://localhost:10000
+    version: v5.1.0
+    timeout:
+      connect: 10s
+      read: 30s
+
+server:
+  port: 8084
