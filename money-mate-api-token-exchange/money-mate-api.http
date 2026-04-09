@@ -11,7 +11,7 @@
 ### - timo.fi.29@example.com / 6addcd
 ### - ellie.de.29@example.com / 2efb1f
 
-@baseUrl = {{baseUrl}}
+@baseUrl = http://localhost:8080
 ### API Root (public)
 GET {{baseUrl}}/
 Accept: application/prs.hal-forms+json

@@ -37,7 +37,7 @@ public class SessionController {
     }
 
     @PostMapping
-    public ResponseEntity<SessionResponse> createSession(
+    public ResponseEntity<?> createSession(
         @Valid @RequestBody LoginRequest credentials) {
 
         try {
@@ -79,7 +79,10 @@ public class SessionController {
             log.error("Authentication failed for user {}: {}", credentials.username(), e.getMessage(), e);
             return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(null);
+                .body(SessionErrorResponse.authenticationFailed(
+                    e.getMessage(),
+                    e.getStatusCode() != null ? e.getStatusCode().value() : null
+                ));
         } catch (ObpClientException e) {
             log.error("OBP service error during authentication for user {}: {}", credentials.username(), e.getMessage(), e);
             return ResponseEntity
