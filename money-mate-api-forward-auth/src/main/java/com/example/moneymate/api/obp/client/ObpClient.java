@@ -14,6 +14,7 @@ public class ObpClient {
     private static final Logger log = LoggerFactory.getLogger(ObpClient.class);
 
     private final RestClient publicRestClient;
+    private final String baseUrl;
     private final String apiVersion;
 
     public ObpClient(
@@ -21,7 +22,9 @@ public class ObpClient {
         ObpProperties properties
     ) {
         this.publicRestClient = publicRestClient;
+        this.baseUrl = properties.api().baseUrl();
         this.apiVersion = properties.api().version();
+        log.info("Configured OBP public RestClient baseUrl={} apiVersion={}", baseUrl, apiVersion);
     }
 
     /**
@@ -35,6 +38,7 @@ public class ObpClient {
         String uri = "/obp/" + apiVersion + "/users/current";
 
         log.debug("Fetching current user from OBP");
+        logOutgoingRequest("GET", uri, bearerToken);
 
         try {
             UserDetailsResponse response = publicRestClient.get()
@@ -68,6 +72,7 @@ public class ObpClient {
         String uri = "/obp/" + apiVersion + "/my/accounts";
 
         log.debug("Fetching accounts from OBP");
+        logOutgoingRequest("GET", uri, bearerToken);
 
         try {
             ObpAccountsResponse response = publicRestClient.get()
@@ -101,6 +106,7 @@ public class ObpClient {
         String uri = "/obp/" + apiVersion + "/banks";
 
         log.debug("Fetching banks from OBP");
+        logOutgoingRequest("GET", uri, bearerToken);
 
         try {
             ObpBanksResponse response = publicRestClient.get()
@@ -136,6 +142,7 @@ public class ObpClient {
         String uri = "/obp/" + apiVersion + "/banks/" + bankId + "/accounts/" + accountId + "/owner/account";
 
         log.debug("Fetching account details for {}/{}", bankId, accountId);
+        logOutgoingRequest("GET", uri, bearerToken);
 
         try {
             ObpAccountDetailsResponse response = publicRestClient.get()
@@ -171,6 +178,7 @@ public class ObpClient {
         String uri = "/obp/" + apiVersion + "/banks/" + bankId + "/accounts/" + accountId + "/owner/transactions";
 
         log.debug("Fetching transactions for {}/{}", bankId, accountId);
+        logOutgoingRequest("GET", uri, bearerToken);
 
         try {
             ObpTransactionsResponse response = publicRestClient.get()
@@ -196,5 +204,24 @@ public class ObpClient {
 
     private String bearerValue(String bearerToken) {
         return "Bearer " + bearerToken;
+    }
+
+    private void logOutgoingRequest(String method, String uri, String bearerToken) {
+        log.info(
+            "Outgoing RestClient request {} {} authorizationHeader={}",
+            method,
+            baseUrl + uri,
+            "Bearer " + previewToken(bearerToken)
+        );
+    }
+
+    private String previewToken(String token) {
+        if (token == null || token.isBlank()) {
+            return "<empty>";
+        }
+        if (token.length() <= 12) {
+            return token;
+        }
+        return token.substring(0, 8) + "..." + token.substring(token.length() - 4);
     }
 }

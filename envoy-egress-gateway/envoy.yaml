@@ -30,27 +30,26 @@ static_resources:
                   - name: envoy.filters.http.ext_authz
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                      transport_api_version: V3
                       failure_mode_allow: false
-                      http_service:
-                        server_uri:
-                          uri: http://127.0.0.1:10003
-                          cluster: ext_authz_cluster
-                          timeout: 0.5s
-                        path_prefix: /authorize
-                        authorization_request:
-                          headers_to_add:
-                            - key: x-authz-secret
-                              value: shared-secret-for-authz
-                        authorization_response:
-                          allowed_upstream_headers:
-                            patterns:
-                              - exact: authorization
+                      grpc_service:
+                        envoy_grpc:
+                          cluster_name: ext_authz_cluster
+                        timeout: 3s
+                        initial_metadata:
+                          - key: x-authz-secret
+                            value: shared-secret-for-authz
                   - name: envoy.filters.http.router
                     typed_config:
                       "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
   clusters:
     - name: ext_authz_cluster
       type: STATIC
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
       load_assignment:
         cluster_name: ext_authz_cluster
         endpoints:

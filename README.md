@@ -16,7 +16,7 @@ Supporting modules:
 - `http-session-mcp`
   A thin MCP HTTP gateway that authenticates the user, forwards the bearer token, and exposes simple HTTP tools.
 - `envoy-egress-gateway`
-  Local Envoy egress gateway plus external auth service that exchanges bearer tokens and rewrites them to OBP DirectLogin headers.
+  Local Envoy egress gateway plus a Go gRPC external auth service that exchanges bearer tokens and rewrites them to OBP DirectLogin headers.
 
 ## Demo 1
 
@@ -89,11 +89,11 @@ Start either API, depending on the demo:
 ./mvnw spring-boot:run -q -pl money-mate-api-forward-auth
 ```
 
-For the Envoy egress demo, also start the egress auth service and Envoy:
+For the Envoy egress demo, also start the Go auth service and Envoy:
 
 ```bash
-./mvnw spring-boot:run -q -pl envoy-egress-gateway
 ./envoy-egress-gateway/run-envoy.sh
+./envoy-egress-gateway/run-authz.sh
 ```
 
 ## Verification

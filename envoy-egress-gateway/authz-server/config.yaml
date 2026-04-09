@@ -1,0 +1,9 @@
+server:
+  listen_address: 127.0.0.1:10003
+  shared_secret: shared-secret-for-authz
+  timeout: 2s
+
+identity_broker:
+  token_uri: http://localhost:9000/oauth2/token
+  token_exchange_client_id: money-mate-api-token-exchange
+  token_exchange_client_secret: money-mate-api-token-exchange-secret

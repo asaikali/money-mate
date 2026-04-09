@@ -1,3 +1,3 @@
 #!/bin/sh
-cd "$(dirname "$0")/.."
-./mvnw spring-boot:run -q -pl envoy-egress-gateway
+cd "$(dirname "$0")/authz-server"
+go run . -config ./config.yaml

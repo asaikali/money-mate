@@ -31,7 +31,6 @@
         <module>money-mate-api-forward-auth</module>
         <module>http-session-mcp</module>
         <module>identity-broker</module>
-        <module>envoy-egress-gateway</module>
     </modules>
 
 
