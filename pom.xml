@@ -26,6 +26,7 @@
     </properties>
 
     <modules>
+        <module>obp-client</module>
         <module>money-mate-api</module>
         <module>money-mate-api-token-exchange</module>
         <module>money-mate-api-forward-auth</module>
