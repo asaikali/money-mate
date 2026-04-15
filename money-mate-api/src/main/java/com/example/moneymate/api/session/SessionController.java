@@ -1,7 +1,7 @@
 package com.example.moneymate.api.session;
 
+import com.example.moneymate.api.obp.client.DirectLoginObpClient;
 import com.example.moneymate.api.obp.client.ObpAuthenticationException;
-import com.example.moneymate.api.obp.client.ObpClient;
 import com.example.moneymate.api.obp.client.ObpClientException;
 import com.example.moneymate.api.security.SessionTokenStore;
 import com.example.moneymate.api.user.UserController;
@@ -29,9 +29,9 @@ public class SessionController {
     private static final Logger log = LoggerFactory.getLogger(SessionController.class);
 
     private final SessionTokenStore tokenStore;
-    private final ObpClient obpClient;
+    private final DirectLoginObpClient obpClient;
 
-    public SessionController(SessionTokenStore tokenStore, ObpClient obpClient) {
+    public SessionController(SessionTokenStore tokenStore, DirectLoginObpClient obpClient) {
         this.tokenStore = tokenStore;
         this.obpClient = obpClient;
     }
