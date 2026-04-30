@@ -5,14 +5,11 @@ BASE_URL="http://localhost:8080"
 USERNAME="timo.fi.29@example.com"
 PASSWORD="6addcd"
 
-# Persist tokens to disk so CLI-mode calls (one function per process)
-# can share state across invocations, e.g. `./test2.sh login` then
-# `./test2.sh current_user` in a later shell.
+# Persist the session token to disk so CLI-mode calls (one function per
+# process) can share state across invocations, e.g. `./test.sh login` then
+# `./test.sh current_user` in a later shell.
 TOKEN_FILE="${TOKEN_FILE:-${TMPDIR:-/tmp}/money-mate.session}"
-TOKEN_FILE_2="${TOKEN_FILE_2:-${TMPDIR:-/tmp}/money-mate.session2}"
-
 SESSION_TOKEN="${SESSION_TOKEN:-$( [[ -f "$TOKEN_FILE" ]] && cat "$TOKEN_FILE" || true )}"
-SESSION_TOKEN_2="${SESSION_TOKEN_2:-$( [[ -f "$TOKEN_FILE_2" ]] && cat "$TOKEN_FILE_2" || true )}"
 
 httpv() {
   http --ignore-stdin --verbose "$@"
@@ -25,8 +22,7 @@ require_token() {
   fi
 }
 
-# Extract response body from HTTPie --verbose output.
-# HTTPie emits CRLF line endings (wire format), so strip \r before using
+# HTTPie --verbose emits CRLF (HTTP wire format), so strip \r before using
 # awk paragraph mode. The response body is always the last paragraph.
 extract_body() {
   tr -d '\r' | awk 'BEGIN{RS=""} END{print}'
@@ -95,68 +91,9 @@ accounts() {
   httpv GET "${BASE_URL}/accounts" Authorization:"Bearer ${SESSION_TOKEN}"
 }
 
-root_authenticated() {
-  require_token
-  httpv GET "${BASE_URL}/" \
-    Authorization:"Bearer ${SESSION_TOKEN}" \
-    Accept:application/prs.hal-forms+json
-}
-
 logout() {
   require_token
   httpv DELETE "${BASE_URL}/session" Authorization:"Bearer ${SESSION_TOKEN}"
-}
-
-current_user_after_logout() {
-  require_token
-  httpv GET "${BASE_URL}/users/me" \
-    Authorization:"Bearer ${SESSION_TOKEN}" \
-    Accept:application/hal+json
-}
-
-invalid_token() {
-  httpv GET "${BASE_URL}/users/me" \
-    Authorization:"Bearer INVALID-TOKEN-12345" \
-    Accept:application/hal+json
-}
-
-missing_authorization() {
-  httpv GET "${BASE_URL}/session" Accept:application/hal+json
-}
-
-login2() {
-  local response body
-
-  response="$(
-    httpv POST "${BASE_URL}/session" \
-      Content-Type:application/json \
-      Accept:application/prs.hal-forms+json \
-      username="alice@example.com" \
-      password="secret"
-  )"
-
-  echo "$response"
-
-  body="$(echo "$response" | extract_body)"
-
-  SESSION_TOKEN_2="$(echo "$body" | jq -r '.access_token')"
-
-  export SESSION_TOKEN_2
-  printf '%s' "$SESSION_TOKEN_2" > "$TOKEN_FILE_2"
-  echo
-  echo "SESSION_TOKEN_2=${SESSION_TOKEN_2}"
-  echo "(persisted to ${TOKEN_FILE_2})"
-}
-
-current_user_token2() {
-  if [[ -z "${SESSION_TOKEN_2}" ]]; then
-    echo "No SESSION_TOKEN_2 set. Run: login2"
-    return 1
-  fi
-
-  httpv GET "${BASE_URL}/users/me" \
-    Authorization:"Bearer ${SESSION_TOKEN_2}" \
-    Accept:application/hal+json
 }
 
 run_all() {
@@ -168,38 +105,29 @@ run_all() {
   session_status; pause
   current_user; pause
   accounts; pause
-  root_authenticated; pause
-  logout; pause
-  current_user_after_logout; pause
-  invalid_token; pause
-  missing_authorization
+  logout
 }
 
 menu() {
   cat <<EOF
 
-Money Mate HATEOAS API demo
+Money Mate HATEOAS API demo  -  hypermedia walkthrough
 
 BASE_URL=${BASE_URL}
 
-Commands:
-  1   root_unauthenticated
-  2   agents_md
-  3   api_docs
-  4   login
-  5   session_docs
-  6   session_status
-  7   current_user
-  8   accounts
-  9   root_authenticated
-  10  logout
-  11  current_user_after_logout
-  12  invalid_token
-  13  missing_authorization
-  14  login2
-  15  current_user_token2
-  all run_all
-  q   quit
+  Step  Request                     Why this step
+  ----  --------------------------  ------------------------------------
+   1    GET    /                    bootstrap: discover the API
+   2    GET    /AGENTS.md           follow  profile       link (the contract)
+   3    GET    /docs/api            follow  about         link (semantics)
+   4    POST   /session             use     createSession template (login)
+   5    GET    /docs/session        follow  about         link on session
+   6    GET    /session             follow  self          link (session status)
+   7    GET    /users/me            follow  me            link
+   8    GET    /accounts            follow  accounts      link on /users/me
+   9    DELETE /session             use     deleteSession template (logout)
+
+  all   run the full walkthrough      q   quit
 
 EOF
 }
@@ -218,13 +146,7 @@ interactive() {
       6) session_status ;;
       7) current_user ;;
       8) accounts ;;
-      9) root_authenticated ;;
-      10) logout ;;
-      11) current_user_after_logout ;;
-      12) invalid_token ;;
-      13) missing_authorization ;;
-      14) login2 ;;
-      15) current_user_token2 ;;
+      9) logout ;;
       all) run_all ;;
       q|quit|exit) exit 0 ;;
       *) echo "Unknown command: $choice" ;;
