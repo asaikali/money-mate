@@ -91,6 +91,41 @@ accounts() {
   httpv GET "${BASE_URL}/accounts" Authorization:"Bearer ${SESSION_TOKEN}"
 }
 
+# Re-fetch /accounts quietly, pluck the first account's transactions href out
+# of the response, then GET it. The agent cannot hardcode this URL — it only
+# exists by following _links.transactions on accounts[0].
+transactions() {
+  require_token
+
+  local accounts_body href
+  accounts_body="$(
+    http --ignore-stdin GET "${BASE_URL}/accounts" \
+      Authorization:"Bearer ${SESSION_TOKEN}" \
+      Accept:application/hal+json
+  )"
+
+  href="$(echo "$accounts_body" | jq -r '.accounts[0]._links.transactions.href')"
+  if [[ -z "$href" || "$href" == "null" ]]; then
+    echo "No transactions link found on accounts[0]."
+    return 1
+  fi
+
+  echo "Discovered transactions link on accounts[0]: ${href}"
+  echo
+
+  # Hrefs may be absolute or root-relative; normalize before requesting.
+  local url
+  if [[ "$href" == http* ]]; then
+    url="$href"
+  else
+    url="${BASE_URL}${href}"
+  fi
+
+  httpv GET "$url" \
+    Authorization:"Bearer ${SESSION_TOKEN}" \
+    Accept:application/hal+json
+}
+
 logout() {
   require_token
   httpv DELETE "${BASE_URL}/session" Authorization:"Bearer ${SESSION_TOKEN}"
@@ -105,6 +140,7 @@ run_all() {
   session_status; pause
   current_user; pause
   accounts; pause
+  transactions; pause
   logout
 }
 
@@ -115,17 +151,18 @@ Money Mate HATEOAS API demo  -  hypermedia walkthrough
 
 BASE_URL=${BASE_URL}
 
-  Step  Request                     Why this step
-  ----  --------------------------  ------------------------------------
-   1    GET    /                    bootstrap: discover the API
-   2    GET    /AGENTS.md           follow  profile       link (the contract)
-   3    GET    /docs/api            follow  about         link (semantics)
-   4    POST   /session             use     createSession template (login)
-   5    GET    /docs/session        follow  about         link on session
-   6    GET    /session             follow  self          link (session status)
-   7    GET    /users/me            follow  me            link
-   8    GET    /accounts            follow  accounts      link on /users/me
-   9    DELETE /session             use     deleteSession template (logout)
+  Step  Request                            Why this step
+  ----  ---------------------------------  -------------------------------------
+   1    GET    /                           bootstrap: discover the API
+   2    GET    /AGENTS.md                  follow  profile       link (the contract)
+   3    GET    /docs/api                   follow  about         link (semantics)
+   4    POST   /session                    use     createSession template (login)
+   5    GET    /docs/session               follow  about         link on session
+   6    GET    /session                    follow  self          link (session status)
+   7    GET    /users/me                   follow  me            link
+   8    GET    /accounts                   follow  accounts      link on /users/me
+   9    GET    /accounts/.../transactions  follow  transactions  link on first account
+  10    DELETE /session                    use     deleteSession template (logout)
 
   all   run the full walkthrough      q   quit
 
@@ -146,7 +183,8 @@ interactive() {
       6) session_status ;;
       7) current_user ;;
       8) accounts ;;
-      9) logout ;;
+      9) transactions ;;
+      10) logout ;;
       all) run_all ;;
       q|quit|exit) exit 0 ;;
       *) echo "Unknown command: $choice" ;;
