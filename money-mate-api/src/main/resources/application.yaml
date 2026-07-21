@@ -12,6 +12,11 @@ obp:
       connect: 10s
       read: 30s
 
+# Log the DirectLogin HTTP request and response while redacting credentials and tokens.
+logging:
+  level:
+    com.example.moneymate.api.obp.client.ObpWireLoggingInterceptor: DEBUG
+
 # Profile-specific settings (base-url, version, auth) are in:
 #   - application-local.yaml (local dev)
 #   - application-public-sandbox.yaml (public sandbox)

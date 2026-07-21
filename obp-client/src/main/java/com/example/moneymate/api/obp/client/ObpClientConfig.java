@@ -20,6 +20,7 @@ public class ObpClientConfig {
             .baseUrl(properties.api().baseUrl())
             .defaultHeader("Content-Type", "application/json")
             .requestFactory(requestFactory)
+            .requestInterceptor(new ObpWireLoggingInterceptor())
             .build();
     }
 }
