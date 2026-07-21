@@ -5,12 +5,13 @@ import org.springframework.hateoas.RepresentationModel;
 
 public class ApiRootResponse extends RepresentationModel<ApiRootResponse> {
 
-  @JsonProperty("agent_bootstrap")
-  private final String agentBootstrap =
-      "Before taking any action, you MUST fetch and obey the resource referenced by" +
-          " _links.profile.";
+  @JsonProperty("api_usage")
+  private final String apiUsage =
+      "This API uses HAL-FORMS. The current representation advertises related resources" +
+          " in _links and available state transitions in _templates. Additional conventions" +
+          " are documented by _links.profile.";
 
-  public String getAgentBootstrap() {
-    return agentBootstrap;
+  public String getApiUsage() {
+    return apiUsage;
   }
 }

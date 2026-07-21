@@ -15,29 +15,28 @@ public class DocsController {
         String docs = """
             # Session semantics
 
-            This document explains what a **session** represents in this API and how an
-            agent must interact with it.
+            This document explains what a **session** represents in this API and how
+            clients use it.
 
             ## What a session is
             A session represents an **authenticated interaction state** between the client
             and the API. When a session exists, requests may access protected resources
             according to the links and templates exposed by the API.
 
-            A session is created **only** by executing the login operation exposed via a
+            A session is created by executing the login operation exposed via a
             HAL-FORMS template that targets `POST /session`.
 
             ## Access token usage
             When a session is created, the API returns an opaque access token.
 
-            You MUST include this token on all subsequent authenticated requests using the
-            HTTP header:
+            Authenticated requests include this token in the HTTP header:
 
             ```
             Authorization: Bearer <access_token>
             ```
 
-            The access token has no meaning outside this API and MUST NOT be interpreted or
-            decoded by the client.
+            The access token is opaque and has no meaning outside this API. Clients pass
+            it back without interpreting or decoding it.
 
             ## Navigating after authentication
             After creating a session, the API will expose links such as:
@@ -46,10 +45,11 @@ public class DocsController {
             - `me` — the authenticated principal
             - `root` — the API entrypoint
 
-            You MUST navigate using only the relations provided in `_links`.
+            The relations in `_links` advertise navigation available from the current
+            representation.
 
             ## Logging out
-            A session is terminated **only** by executing the logout operation exposed via a
+            A session is terminated by executing the logout operation exposed via a
             HAL-FORMS template on the session resource that targets `DELETE /session`.
 
             If no logout template is present, logout is not available in the current state.
@@ -58,14 +58,14 @@ public class DocsController {
             If a session token is missing, invalid, or expired, the API will respond with
             `401 Unauthorized`.
 
-            When this occurs, you MUST return to the API root and re-authenticate using the
-            hypermedia controls provided there.
+            When this occurs, a new session can be established using the hypermedia
+            controls advertised by the API root.
 
-            ## Authority
+            ## Hypermedia conventions
             This document defines the semantics of the session resource.
 
-            At all times, the authoritative source of what actions are permitted is the
-            current API response, as expressed through `_links` and `_templates`.
+            The current representation advertises related resources through `_links` and
+            currently offered state transitions through `_templates`.
             """;
 
         return ResponseEntity.ok()

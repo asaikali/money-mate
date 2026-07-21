@@ -7,7 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,13 +34,12 @@ class ApiRootControllerTest {
     }
 
     @Test
-    @DisplayName("GET / should include agent_bootstrap field with instructions")
-    void getRoot_shouldIncludeAgentBootstrapField() throws Exception {
+    @DisplayName("GET / should describe HAL-FORMS API usage")
+    void getRoot_shouldDescribeApiUsage() throws Exception {
         mockMvc.perform(get("/"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.agent_bootstrap").exists())
-            .andExpect(jsonPath("$.agent_bootstrap").isString())
-            .andExpect(jsonPath("$.agent_bootstrap").value(notNullValue()));
+            .andExpect(jsonPath("$.api_usage").value(containsString("HAL-FORMS")))
+            .andExpect(jsonPath("$.agent_bootstrap").doesNotExist());
     }
 
     @Test
@@ -59,7 +59,7 @@ class ApiRootControllerTest {
             .andExpect(jsonPath("$._links.profile").exists())
             .andExpect(jsonPath("$._links.profile.href").value("/AGENTS.md"))
             .andExpect(jsonPath("$._links.profile.type").value("text/markdown"))
-            .andExpect(jsonPath("$._links.profile.title").value("Agent Instructions - MUST READ"));
+            .andExpect(jsonPath("$._links.profile.title").value("Money Mate HAL-FORMS Profile"));
     }
 
     @Test
@@ -100,6 +100,7 @@ class ApiRootControllerTest {
         mockMvc.perform(get("/AGENTS.md"))
             .andExpect(status().isOk())
             .andExpect(content().contentTypeCompatibleWith("text/markdown"))
-            .andExpect(content().string(notNullValue()));
+            .andExpect(content().string(containsString("Money Mate HAL-FORMS Profile")))
+            .andExpect(content().string(not(containsString("take precedence over"))));
     }
 }

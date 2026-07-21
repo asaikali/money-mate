@@ -50,8 +50,7 @@ public class SessionController {
             // Build response
             SessionResponse response = SessionResponse.create(token);
 
-            // Build links without affordances - guide agent to navigate, not act
-            // After login, agent should follow links to discover available actions
+            // Advertise navigation from the newly created session.
             Link meLink = linkTo(methodOn(UserController.class).getCurrentUser()).withRel("me")
                 .withTitle("Your user profile and available actions");
 
@@ -59,7 +58,7 @@ public class SessionController {
 
             Link aboutLink = Link.of("/docs/session", "about")
                 .withType("text/markdown")
-                .withTitle("Session semantics (MUST READ)");
+                .withTitle("Session authentication and lifecycle");
 
             Link rootLink = Link.of("/", "root")
                 .withTitle("Return to API root");
@@ -105,7 +104,7 @@ public class SessionController {
 
         Link aboutLink = Link.of("/docs/session", "about")
             .withType("text/markdown")
-            .withTitle("Session semantics (MUST READ)");
+            .withTitle("Session authentication and lifecycle");
 
         Link meLink = Link.of("/users/me", "me");
         Link rootLink = Link.of("/", "root");

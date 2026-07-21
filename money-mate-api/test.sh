@@ -92,8 +92,8 @@ accounts() {
 }
 
 # Re-fetch /accounts quietly, pluck the first account's transactions href out
-# of the response, then GET it. The agent cannot hardcode this URL — it only
-# exists by following _links.transactions on accounts[0].
+# of the response, then GET it. This demonstrates discovery through
+# _links.transactions on accounts[0] without relying on a hard-coded URL.
 transactions() {
   require_token
 
@@ -154,7 +154,7 @@ BASE_URL=${BASE_URL}
   Step  Request                            Why this step
   ----  ---------------------------------  -------------------------------------
    1    GET    /                           bootstrap: discover the API
-   2    GET    /AGENTS.md                  follow  profile       link (the contract)
+   2    GET    /AGENTS.md                  follow  profile       link (HAL-FORMS profile)
    3    GET    /docs/api                   follow  about         link (semantics)
    4    POST   /session                    use     createSession template (login)
    5    GET    /docs/session               follow  about         link on session

@@ -21,8 +21,7 @@ public class DocsController {
             ## Bearer token access
             This API expects an OAuth 2.0 Bearer token issued by the identity broker.
 
-            You MUST include the token on authenticated requests using the
-            HTTP header:
+            Authenticated requests include the token in the HTTP header:
 
             ```
             Authorization: Bearer <access_token>

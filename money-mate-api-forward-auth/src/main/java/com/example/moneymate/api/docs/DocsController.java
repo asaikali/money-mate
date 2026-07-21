@@ -21,8 +21,7 @@ public class DocsController {
             ## Bearer token access
             This API expects an inbound Bearer token on protected requests.
 
-            You MUST include the token on authenticated requests using the
-            HTTP header:
+            Authenticated requests include the token in the HTTP header:
 
             ```
             Authorization: Bearer <access_token>
